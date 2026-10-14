@@ -11,22 +11,26 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <!-- =============================================== -->
-    <!-- 🔧 วาง firebaseConfig ของคุณตรงนี้ ด้านล่างนี้ -->
+    <!-- Firebase configuration: ใช้ Firebase compat SDK ที่โหลดไว้ใน <head> -->
     <script>
-    const firebaseConfig = {
-        apiKey: "เปลี่ยน-ตรง-นี้",
-        authDomain: "เปลี่ยน-ตรง-นี้.firebaseapp.com",
-        databaseURL: "https://เปลี่ยน-ตรงนี้-default-rtdb.firebaseio.com",
-        projectId: "เปลี่ยน-ตรง-นี้",
-        storageBucket: "เปลี่ยน-ตรง-นี้.appspot.com",
-        messagingSenderId: "000000000000",
-        appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+        const firebaseConfig = {
+            apiKey: "AIzaSyATxJI3t_iH_dp4IOX8TLmvUsEfwBB8lHU",
+            authDomain: "router-leave.firebaseapp.com",
+            projectId: "router-leave",
+            storageBucket: "router-leave.firebasestorage.app",
+            messagingSenderId: "848018963492",
+            appId: "1:848018963492:web:69bef6327c17322a85ecb1",
+            measurementId: "G-NQ23WFHQK0",
+            // ใส่ databaseURL ของ Realtime Database จาก Firebase Console หากโปรเจกต์ไม่ได้กำหนดค่าอัตโนมัติ
+            // databaseURL: "https://YOUR-DATABASE-NAME-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        // SDK ที่ใช้ในไฟล์นี้เป็นแบบ compat จึงไม่ใช้ import { initializeApp } แบบ modular
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
     </script>
-    <!-- =============================================== -->
 
     <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
