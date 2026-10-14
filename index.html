@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบขอลาพนักงาน - แผนก ROUTER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- =============================================== -->
+    <!-- 🔧 วาง firebaseConfig ของคุณตรงนี้ ด้านล่างนี้ -->
+    <script>
+    const firebaseConfig = {
+        apiKey: "เปลี่ยน-ตรง-นี้",
+        authDomain: "เปลี่ยน-ตรง-นี้.firebaseapp.com",
+        databaseURL: "https://เปลี่ยน-ตรงนี้-default-rtdb.firebaseio.com",
+        projectId: "เปลี่ยน-ตรง-นี้",
+        storageBucket: "เปลี่ยน-ตรง-นี้.appspot.com",
+        messagingSenderId: "000000000000",
+        appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    </script>
+    <!-- =============================================== -->
+
+    <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa fa-building text-white text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">แผนก ROUTER</h1>
+                <p class="text-gray-500">ระบบขอลาพนักงาน (ทุกคนเห็นข้อมูลร่วมกัน)</p>
+            </div>
+            <div id="connStatus" class="mb-4 text-center text-sm">
+                <span class="text-yellow-600">
+                    <i class="fa fa-circle-o-notch fa-spin mr-1"></i> กำลังเชื่อมต่อระบบ...
+                </span>
+            </div>
+            <div class="space-y-4">
+                <button onclick="showEmployeeForm()" class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition">
+                    <i class="fa fa-user mr-2"></i> พนักงาน - แจ้งขอลา
+                </button>
+                <button onclick="showManagerLogin()" class="w-full py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition">
+                    <i class="fa fa-user-circle mr-2"></i> หัวหน้างาน - อนุมัติคำขอลา
+                </button>
+            </div>
+            <div id="managerLoginForm" class="hidden mt-6 pt-6 border-t">
+                <h3 class="text-lg font-semibold mb-4 text-center">เข้าสู่ระบบหัวหน้างาน</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน</label>
+                        <input type="password" id="managerPassword" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-center font-mono">
+                    </div>
+                    <p id="loginError" class="text-red-500 text-sm hidden text-center">❌ รหัสผ่านไม่ถูกต้อง!</p>
+                    <div class="flex gap-2">
+                        <button onclick="verifyManagerPassword()" class="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">
+                            <i class="fa fa-lock mr-1"></i> เข้าสู่ระบบ
+                        </button>
+                        <button onclick="hideManagerLogin()" class="py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg">ยกเลิก</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="employeePage" class="hidden min-h-screen p-4 pb-20">
+        <div class="max-w-lg mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">📝 แบบฟอร์มขอลา</h2>
+                    <button onclick="logout()" class="text-gray-500 hover:text-red-500">
+                        <i class="fa fa-sign-out"></i> ออก
+                    </button>
+                </div>
+                <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                    <h3 class="font-bold text-blue-800 mb-3">📅 รายการพนักงานที่ลา</h3>
+                    <p class="text-sm text-blue-600 mb-3">⚠️ กฎ: ลาได้ไม่เกิน <strong>2 คน/วัน</strong> · ข้อมูลตรงกันทุกคน</p>
+                    <div id="leaveCalendar" class="max-h-64 overflow-y-auto space-y-2 text-sm">
+                        <p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>
+                    </div>
+                </div>
+                <form id="leaveForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล</label>
+                        <select id="empName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">-- กรุณาเลือกชื่อ-นามสกุล --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทการลา</label>
+                        <select id="leaveType" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">-- เลือกประเภท --</option>
+                            <option value="ลาพักร้อน (AN)">ลาพักร้อน (AN)</option>
+                            <option value="ลากิจ (P)">ลากิจ (P)</option>
+                            <option value="ลาป่วย (S)">ลาป่วย (S)</option>
+                            <option value="ลากิจพิเศษ (PN)">ลากิจพิเศษ (PN)</option>
+                            <option value="Thank You Day">Thank You Day</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">วันที่เริ่มลา</label>
+                            <input type="date" id="startDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">วันที่สิ้นสุดลา</label>
+                            <input type="date" id="endDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนวันลา</label>
+                        <input type="number" id="leaveDays" min="1" readonly class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เหตุผลการลา</label>
+                        <textarea id="reason" rows="3" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="ระบุเหตุผล..."></textarea>
+                    </div>
+                    <button type="submit" id="submitBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+                        <i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา
+                    </button>
+                </form>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-bold mb-4">📋 ประวัติคำขอลาของฉัน</h3>
+                <div id="myRequests" class="space-y-3">
+                    <p class="text-gray-500 text-center py-4">เลือกชื่อแล้วจะแสดงประวัติของคุณที่นี่</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="managerPage" class="hidden min-h-screen p-4 pb-20">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">✅ จัดการคำขอลาพนักงาน</h2>
+                    <div class="flex gap-3 items-center">
+                        <button onclick="downloadAllRecords()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm">
+                            <i class="fa fa-download mr-1"></i> ดาวน์โหลดรายงาน
+                        </button>
+                        <button onclick="logout()" class="text-gray-500 hover:text-red-500">
+                            <i class="fa fa-sign-out"></i> ออก
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4 mb-6 border border-green-200">
+                    <h3 class="font-bold text-green-800 mb-3">📅 ภาพรวมการลาทั้งแผนก</h3>
+                    <p class="text-sm text-green-600 mb-3">กฎ: ลาได้ไม่เกิน 2 คนต่อวัน · ข้อมูลตรงกันทุกคน</p>
+                    <div id="allLeaveCalendar" class="max-h-64 overflow-y-auto space-y-2 text-sm">
+                        <p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>
+                    </div>
+                </div>
+                <h3 class="font-bold mb-4">📋 รายการคำขอลารออนุมัติ</h3>
+                <div id="allRequests" class="space-y-4">
+                    <p class="text-gray-500 text-center py-4">กำลังโหลดข้อมูล...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl transform translate-y-full opacity-0 transition-all duration-300 z-50">ข้อความ</div>
+
+    <script>
+        // ========== รายชื่อพนักงาน ==========
+        const EMPLOYEE_LIST = [
+            "นายพิชิตพงษ์ ศรีเขตร์",
+            "นายแสงอรุณ สุวรรณโคตร",
+            "นายปัญญาเลิศ จรรยากรณ์",
+            "นายธวัชชัย จันทร์จำนงค์",
+            "นายวรายุทธ์ แข็งตะโนด",
+            "นางสาวปาริฉัตร ปวนยา",
+            "นายสามารถ โสพิศ",
+            "นายอภิชาติ วันลา",
+            "นายกมล พงษ์กิ่ง",
+            "นายอัถธสิทธิ์ อสิพงษ์",
+            "นายประมวล เลิศยะโส",
+            "นายธวัชชัย บุญเสริม",
+            "นายชัยยนต์ พุทธนาวงค์",
+            "นายบรรหาร มุสสานาม",
+            "นางสาวนิตยา มนตะราช",
+            "นายธวัชชัย สันพี",
+            "นายพีระพล ชะอุ่มเกษ"
+        ];
+
+        let leaveRequests = [];
+        let currentUser = null;
+        let firebaseListener = null;
+
+        // ========== ตรวจสอบการเชื่อมต่อ Firebase ==========
+        function checkConnection() {
+            const connRef = db.ref('.info/connected');
+            connRef.on('value', (snap) => {
+                const connected = snap.val() === true;
+                const statusEl = document.getElementById('connStatus');
+                if (connected) {
+                    statusEl.innerHTML = '<span class="text-green-600"><i class="fa fa-check-circle mr-1"></i> เชื่อมต่อระบบสำเร็จ</span>';
+                } else {
+                    statusEl.innerHTML = '<span class="text-red-600"><i class="fa fa-exclamation-circle mr-1"></i> ไม่เชื่อมต่อ — ตรวจสอบ Rules และ databaseURL</span>';
+                }
+            });
+        }
+        checkConnection();
+
+        // ========== เริ่มต้นรายชื่อ ==========
+        function initEmployeeOptions() {
+            const select = document.getElementById('empName');
+            EMPLOYEE_LIST.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+            select.addEventListener('change', function() {
+                currentUser = this.value || null;
+                renderEmployeeRequests();
+            });
+        }
+        initEmployeeOptions();
+
+        // ========== รับข้อมูลแบบเรียลไทม์ ==========
+        function subscribeToLeaveData() {
+            if (firebaseListener) firebaseListener.off();
+            firebaseListener = db.ref('leaveRequests').on('value', (snapshot) => {
+                const data = snapshot.val();
+                leaveRequests = data
+                    ? Object.entries(data).map(([id, val]) => ({ id, ...val }))
+                        .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+                    : [];
+                renderAllVisiblePages();
+            }, (error) => {
+                console.error('Firebase Error:', error);
+                showToast('❌ ผิดพลาด: ' + error.code + ' — ตรวจสอบ Rules ใน Firebase');
+            });
+        }
+
+        function renderAllVisiblePages() {
+            if (!document.getElementById('employeePage').classList.contains('hidden')) {
+                renderLeaveCalendar('leaveCalendar');
+                renderEmployeeRequests();
+            }
+            if (!document.getElementById('managerPage').classList.contains('hidden')) {
+                renderLeaveCalendar('allLeaveCalendar');
+                renderManagerRequests();
+            }
+        }
+
+        function showManagerLogin() {
+            document.getElementById('managerLoginForm').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        }
+        function hideManagerLogin() {
+            document.getElementById('managerLoginForm').classList.add('hidden');
+            document.getElementById('managerPassword').value = '';
+        }
+
+        function verifyManagerPassword() {
+            const pw = document.getElementById('managerPassword').value.trim();
+            if (/^st.{5}$/.test(pw)) {
+                showPage('managerPage');
+                showToast('✅ เข้าสู่ระบบสำเร็จ');
+                subscribeToLeaveData();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function showEmployeeForm() {
+            showPage('employeePage');
+            showToast('✅ เข้าใช้งานโหมดพนักงาน');
+            subscribeToLeaveData();
+        }
+
+        function showPage(pageId) {
+            ['loginPage','employeePage','managerPage'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        function logout() {
+            if (firebaseListener) firebaseListener.off();
+            showPage('loginPage');
+            hideManagerLogin();
+            currentUser = null;
+            document.getElementById('empName').value = '';
+        }
+
+        // ========== คำนวณจำนวนวัน ==========
+        document.getElementById('startDate').addEventListener('change', calculateDays);
+        document.getElementById('endDate').addEventListener('change', calculateDays);
+        function calculateDays() {
+            const s = document.getElementById('startDate').value;
+            const e = document.getElementById('endDate').value;
+            if (s && e) {
+                const start = new Date(s), end = new Date(e);
+                if (end >= start) {
+                    const days = Math.ceil((end - start)/(1000*60*60*24)) + 1;
+                    document.getElementById('leaveDays').value = days;
+                } else document.getElementById('leaveDays').value = '';
+            }
+        }
+
+        function getLeaveCountByDate(targetDate) {
+            return leaveRequests.filter(req => {
+                if (req.status === 'ไม่อนุมัติ') return false;
+                const start = new Date(req.startDate), end = new Date(req.endDate);
+                const check = new Date(targetDate);
+                return check >= start && check <= end;
+            }).length;
+        }
+
+        function checkLeaveAvailability(startDate, endDate) {
+            const start = new Date(startDate), end = new Date(endDate);
+            const conflicts = [];
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                if (getLeaveCountByDate(dateStr) >= 2) conflicts.push(dateStr);
+            }
+            return conflicts;
+        }
+
+        // ========== ส่งคำขอลา ==========
+        document.getElementById('leaveForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const empName = document.getElementById('empName').value;
+            const leaveType = document.getElementById('leaveType').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const leaveDays = document.getElementById('leaveDays').value;
+            const reason = document.getElementById('reason').value;
+
+            if (!empName || !leaveType || !startDate || !endDate || !leaveDays || !reason) {
+                showToast('⚠️ กรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            const conflicts = checkLeaveAvailability(startDate, endDate);
+            if (conflicts.length > 0) {
+                showToast(`❌ วันที่ ${conflicts[0]} มีคนลาเต็มแล้ว (2 คน/วัน)`);
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+
+            try {
+                const newRequest = {
+                    empName, leaveType, startDate, endDate, leaveDays, reason,
+                    status: 'รออนุมัติ',
+                    submittedAt: new Date().toLocaleString('th-TH')
+                };
+                await db.ref('leaveRequests').push(newRequest);
+                showToast('✅ ส่งข้อมูลสำเร็จ! ทุกคนเห็นแล้ว');
+                this.reset();
+                document.getElementById('leaveDays').value = '';
+                currentUser = empName;
+            } catch (err) {
+                console.error('Submit Error:', err);
+                showToast('❌ ผิดพลาด: ' + err.message + ' — เช็ค Rules ใน Firebase');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';
+            }
+        });
+
+        // ========== แสดงตารางวันลา ==========
+        function groupLeavesByDate() {
+            const groups = {};
+            leaveRequests.forEach(req => {
+                if (req.status === 'ไม่อนุมัติ') return;
+                const start = new Date(req.startDate), end = new Date(req.endDate);
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+                    const key = d.toISOString().split('T')[0];
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push({name:req.empName, type:req.leaveType, status:req.status});
+                }
+            });
+            return Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0]));
+        }
+
+        function renderLeaveCalendar(containerId) {
+            const container = document.getElementById(containerId);
+            const grouped = groupLeavesByDate();
+            if (grouped.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-2">ยังไม่มีรายการลา</p>';
+                return;
+            }
+            container.innerHTML = grouped.map(([date, list]) => {
+                const isFull = list.length >= 2;
+                return `
+                <div class="p-2 rounded ${isFull ? 'bg-red-100 border border-red-200' : 'bg-white border border-gray-200'}">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-semibold">📆 ${formatDateTh(date)}</span>
+                        <span class="text-xs font-bold ${isFull ? 'text-red-600' : 'text-green-600'}">
+                            ${list.length}/2 คน ${isFull ? ' ⚙ เต็ม' : ''}
+                        </span>
+                    </div>
+                    <div class="space-y-1 pl-2">
+                        ${list.map(i=>`<div class="text-xs flex justify-between"><span>👤 ${i.name} — ${i.type}</span><span class="${
+                            i.status==='อนุมัติ'?'text-green-600':i.status==='รออนุมัติ'?'text-yellow-600':'text-red-600'
+                        }">${i.status}</span></div>`).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function formatDateTh(dateStr) {
+            return new Date(dateStr).toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
+        }
+
+        function renderEmployeeRequests() {
+            const container = document.getElementById('myRequests');
+            if (!currentUser) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">เลือกชื่อ-นามสกุลด้านบนก่อนครับ</p>';
+                return;
+            }
+            const my = leaveRequests.filter(r=>r.empName === currentUser);
+            if (my.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-center py-4">ยังไม่มีประวัติของคุณ (${currentUser})</p>`;
+                return;
+            }
+            container.innerHTML = my.map(r=>`
+                <div class="border rounded-lg p-3 ${
+                    r.status==='อนุมัติ'?'border-green-300 bg-green-50':
+                    r.status==='ไม่อนุมัติ'?'border-red-300 bg-red-50':'border-yellow-300 bg-yellow-50'
+                }">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-medium">${r.leaveType}</p>
+                            <p class="text-sm text-gray-600">${r.startDate} ถึง ${r.endDate} (${r.leaveDays} วัน)</p>
+                            <p class="text-sm text-gray-500">ส่งเมื่อ: ${r.submittedAt}</p>
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full font-medium ${
+                            r.status==='อนุมัติ'?'bg-green-500 text-white':
+                            r.status==='ไม่อนุมัติ'?'bg-red-500 text-white':'bg-yellow-500 text-yellow-900'
+                        }">${r.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderManagerRequests() {
+            const container = document.getElementById('allRequests');
+            const pending = leaveRequests.filter(r=>r.status === 'รออนุมัติ');
+            if (pending.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">ยังไม่มีคำขอลารอการอนุมัติ</p>';
+                return;
+            }
+            container.innerHTML = pending.map(r=>{
+                const conflict = checkLeaveAvailability(r.startDate, r.endDate);
+                return `
+                <div class="border rounded-lg p-4 border-blue-200 bg-blue-50">
+                    <div class="mb-3">
+                        <p class="font-bold text-lg">👤 ${r.empName}</p>
+                        <p class="text-sm"><strong>ประเภท:</strong> ${r.leaveType} | <strong>จำนวน:</strong> ${r.leaveDays} วัน</p>
+                        <p class="text-sm"><strong>ช่วงวันที่:</strong> ${r.startDate} ถึง ${r.endDate}</p>
+                        <p class="text-sm"><strong>เหตุผล:</strong> ${r.reason}</p>
+                        <p class="text-xs text-gray-500">ส่งเมื่อ: ${r.submittedAt}</p>
+                        ${conflict.length?'<p class="text-xs text-orange-600 mt-1">⚠️ บางวันใกล้เต็มโควตา</p>':''}
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="approveRequest('${r.id}')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm">
+                            <i class="fa fa-check mr-1"></i> อนุมัติ
+                        </button>
+                        <button onclick="rejectRequest('${r.id}')" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm">
+                            <i class="fa fa-times mr-1"></i> ไม่อนุมัติ
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.approveRequest = async function(id) {
+            const req = leaveRequests.find(r=>r.id === id);
+            if (!req) return;
+            if (checkLeaveAvailability(req.startDate, req.endDate).length > 0) {
+                showToast('❌ ไม่สามารถอนุมัติได้ — บางวันเต็มโควตาแล้ว');
+                return;
+            }
+            try {
+                await db.ref('leaveRequests/'+id).update({status:'อนุมัติ'});
+                showToast('✅ อนุมัติสำเร็จ — ทุกคนเห็นการเปลี่ยนแปลง');
+            } catch (err) { showToast('❌ ผิดพลาด: ' + err.message); }
+        };
+
+        window.rejectRequest = async function(id) {
+            try {
+                await db.ref('leaveRequests/'+id).update({status:'ไม่อนุมัติ'});
+                showToast('❌ ไม่อนุมัติแล้ว — ทุกคนเห็นการเปลี่ยนแปลง');
+            } catch (err) { showToast('❌ ผิดพลาด: ' + err.message); }
+        };
+
+        function downloadAllRecords() {
+            if (leaveRequests.length === 0) { showToast('⚠️ ไม่มีข้อมูล'); return; }
+            const headers = ['ชื่อ','ประเภท','วันที่เริ่ม','วันที่สิ้นสุด','จำนวนวัน','เหตุผล','สถานะ','วันที่ส่ง'];
+            const rows = leaveRequests.map(r=>[r.empName,r.leaveType,r.startDate,r.endDate,r.leaveDays,r.reason,r.status,r.submittedAt]);
+            const csv = '\uFEFF' + [headers.join(','), ...rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(','))].join('\n');
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `รายงานการลา_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+            showToast('✅ ดาวน์โหลดสำเร็จ');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('translate-y-full','opacity-0');
+            setTimeout(()=>t.classList.add('translate-y-full','opacity-0'),3500);
+        }
+    </script>
+</body>
+</html>
