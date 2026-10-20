@@ -60,7 +60,6 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 .summary-scroll th{background:#f1f5f9!important;color:#334155}
 #allRequests>div,#processedRequests>div,#cancelRequests>div{border-radius:14px!important;margin-bottom:12px;padding:16px!important}
 .status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 10px;font-weight:600}
-#connStatus{border-radius:10px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0}
 @media(min-width:768px){#managerPage>.max-w-2xl{max-width:1180px!important}#managerPage #managerDashboard .grid{gap:14px}}
 @media(max-width:640px){body:before{min-height:52px;padding:14px 16px;font-size:14px}#loginPage{min-height:calc(100vh - 52px)!important;padding:22px 14px!important}#loginPage>div{border-radius:20px!important}#employeePage,#managerPage{padding:14px 10px 70px!important}#employeePage .bg-white.rounded-xl,#managerPage .bg-white.rounded-xl{padding:15px!important;border-radius:15px!important}#employeePage h2,#managerPage h2{font-size:18px!important}.month-grid{gap:3px}.month-day{min-height:58px!important;padding:3px!important;border-radius:7px!important}.month-day .day-num{font-size:11px}.month-day .day-count,.month-day .day-names{font-size:8px!important}.month-nav{flex-wrap:wrap}.summary-scroll{max-width:100%}#managerDashboard .text-3xl{font-size:25px!important}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
@@ -69,7 +68,7 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
           </head>
           <body class="bg-gray-100 text-gray-800">
             <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
-              <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+              <div class="relative bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
                 <div class="text-center mb-8">
                   <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fa fa-building text-white text-3xl"></i>
@@ -77,10 +76,9 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                   <h1 class="text-2xl font-bold">แผนก ROUTER</h1>
                   <p class="text-gray-500">ระบบขอลาพนักงาน</p>
                 </div>
-                <div id="connStatus" class="mb-4 text-center text-sm">
-                  <span class="text-yellow-600">
-                    <i class="fa fa-circle-notch fa-spin mr-1"></i> กำลังเชื่อมต่อระบบ...</span>
-                  </div>
+                <div id="connStatus" class="absolute top-3 right-3 z-50" title="กำลังเชื่อมต่อระบบ..." aria-label="กำลังเชื่อมต่อระบบ...">
+                  <span class="block w-4 h-4 rounded-full bg-orange-500 animate-pulse"></span>
+                </div>
                   <form id="loginForm" class="space-y-4">
                     <div>
                       <label for="loginUsername" class="block text-sm font-medium mb-1">ชื่อพนักงาน</label>
@@ -742,7 +740,18 @@ async function verifyEmployeeTransaction(name){
  }catch(err){console.error(err);showToast('ยืนยันรหัสผ่านไม่สำเร็จ: '+(err.message||err.code),true);return false;}
 }
 
-function checkConnection(){connectionListener=snap=>{const connected=snap.val()===true;$('connStatus').innerHTML=connected?'<span class="text-green-600"><i class="fa fa-check-circle mr-1"></i> เชื่อมต่อระบบสำเร็จ</span>':'<span class="text-red-600"><i class="fa fa-exclamation-circle mr-1"></i> ไม่เชื่อมต่อระบบ</span>';};db.ref('.info/connected').on('value',connectionListener, error=>{console.warn(error);});}
+let connCloud=null;
+function renderConnStatus(){
+ const el=$('connStatus');if(!el)return;
+ const dot=el.firstElementChild;if(!dot)return;
+ const online=navigator.onLine!==false;
+ let color='bg-orange-500',label='สัญญาณติดขัด';
+ if(!online){color='bg-red-500';label='ขาดการเชื่อมต่อ';}
+ else if(connCloud===true){color='bg-green-500';label='เชื่อมต่อระบบสำเร็จ';}
+ dot.className='block w-4 h-4 rounded-full animate-pulse '+color;
+ el.title=label;el.setAttribute('aria-label',label);
+}
+function checkConnection(){connectionListener=snap=>{connCloud=snap.val()===true;renderConnStatus();};db.ref('.info/connected').on('value',connectionListener, error=>{console.warn(error);});window.addEventListener('online',renderConnStatus);window.addEventListener('offline',renderConnStatus);renderConnStatus();}
 function initEmployeeOptions(){
   const select=$('empName'),managerSelect=$('managerEmpName'),loginSelect=$('loginUsername');
   if(select) select.innerHTML='<option value="">-- กรุณาเลือกชื่อ-นามสกุล --</option>';
