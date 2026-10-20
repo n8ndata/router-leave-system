@@ -12,7 +12,6 @@
           <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js"></script>
           <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-analytics-compat.js"></script>
           <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-database-compat.js"></script>
-          <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
           <script src="https://cdn.tailwindcss.com"></script>
             <style>
 .logout-btn{position:relative;z-index:99999;cursor:pointer;pointer-events:auto;user-select:none}.logout-btn:hover{background:#fee2e2!important;color:#dc2626!important}button:disabled{opacity:.55;cursor:not-allowed}.status-pill{white-space:nowrap}.month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.month-day{min-height:76px;border:1px solid #e5e7eb;border-radius:8px;padding:5px;background:#fff;text-align:left;overflow:hidden}.month-day:hover{border-color:#60a5fa;background:#eff6ff}.month-day.empty{background:transparent;border-color:transparent}.month-day.weekend-sat{background:#e0f2fe;border-color:#7dd3fc}.month-day.weekend-sun{background:#ffe4e6;border-color:#fda4af}.month-day.leave-one{background:#fef3c7;border-color:#f59e0b}.month-day.leave-full{background:#fee2e2;border-color:#ef4444}.month-day.today{box-shadow:inset 0 0 0 2px #2563eb}.month-day.weekend-sat .day-num{color:#0369a1}.month-day.weekend-sun .day-num{color:#be123c}.month-weekday.sat{color:#0284c7}.month-weekday.sun{color:#e11d48}.month-day .day-num{font-weight:700;font-size:13px}.month-day .day-count{display:block;font-size:10px;font-weight:700;margin-top:3px}.month-day .day-names{display:block;font-size:10px;line-height:1.25;margin-top:2px;overflow-wrap:anywhere}.calendar-detail{font-size:12px;line-height:1.5}.month-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.month-nav button{padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;background:white}@media(max-width:480px){.month-day{min-height:60px;padding:3px}.month-day .day-names{font-size:9px}.month-day .day-count{font-size:9px}}
@@ -80,17 +79,6 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                 <div id="connStatus" class="absolute top-3 right-3 z-50" title="กำลังเชื่อมต่อระบบ..." aria-label="กำลังเชื่อมต่อระบบ...">
                   <span class="block w-4 h-4 rounded-full bg-orange-500 animate-pulse"></span>
                 </div>
-                <div id="lineLoginBlock" class="hidden mb-6">
-                  <button type="button" id="btnLineLogin" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
-                    <i class="fa-brands fa-line mr-2"></i> เข้าสู่ระบบด้วย LINE
-                  </button>
-                  <p class="text-xs text-gray-500 text-center mt-2">ใช้บัญชี LINE ของคุณที่ผูกไว้กับระบบ</p>
-                  <div class="flex items-center gap-2 my-4">
-                    <span class="flex-1 h-px bg-gray-200"></span>
-                    <span class="text-xs text-gray-400">หรือ</span>
-                    <span class="flex-1 h-px bg-gray-200"></span>
-                  </div>
-                </div>
                   <form id="loginForm" class="space-y-4">
                     <div>
                       <label for="loginUsername" class="block text-sm font-medium mb-1">ชื่อพนักงาน</label>
@@ -124,17 +112,6 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                   </form>
                   <p class="text-xs text-gray-500 text-center mt-4">เลือกชื่อพนักงานจากรายการ แล้วกรอกรหัสผ่านของแต่ละคน</p>
                 </div>
-                <div id="lineLoginStart" class="hidden bg-white rounded-xl shadow-lg p-8 w-full max-w-md text-center">
-                  <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fa-brands fa-line text-white text-3xl"></i>
-                  </div>
-                  <h2 class="text-xl font-bold mb-2">เข้าใช้งานผ่าน LINE</h2>
-                  <p class="text-sm text-gray-600 mb-6">ยืนยันตัวตนด้วยบัญชี LINE ของคุณ เพื่อเข้าสู่ระบบขอลาโดยไม่ต้องกรอกรหัสผ่าน</p>
-                  <button type="button" id="btnLineLoginStart" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
-                    <i class="fa-brands fa-line mr-2"></i> เข้าสู่ระบบด้วย LINE
-                  </button>
-                  <button type="button" id="btnLineLoginUsePassword" class="mt-3 text-sm text-gray-500 underline">เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่าน</button>
-                </div>
               </div>
                     <div id="employeePage" class="hidden min-h-screen p-4 pb-20">
                       <div class="max-w-lg mx-auto">
@@ -147,8 +124,6 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                             <div class="flex gap-2">
                               <button id="btnChangePassword" class="text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border font-medium">
                                 <i class="fa fa-key mr-1"></i> เปลี่ยนรหัสผ่าน</button>
-                              <button id="btnLinkLine" class="hidden text-green-700 bg-green-50 px-3 py-2 rounded-lg border font-medium">
-                                <i class="fa-brands fa-line mr-1"></i> ผูก LINE</button>
                               <button id="empLogout" class="logout-btn text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border font-medium">
                                 <i class="fa fa-sign-out">
                                 </i> ออก</button>
@@ -441,119 +416,6 @@ const monthCursor={employee:new Date(new Date().getFullYear(),new Date().getMont
 const $=id=>document.getElementById(id);
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function showPage(pageId){['loginPage','employeePage','managerPage'].forEach(id=>$(id).classList.add('hidden'));$(pageId).classList.remove('hidden');}
-// ===== เข้าสู่ระบบด้วย LINE (LIFF) =====
-// ต้องตั้งค่า LIFF ID จาก LINE Developers Console (LIFF app ชี้ไปที่ URL ของเว็บนี้)
-const LIFF_ID='2012126548-uZIwUGAe';
-let liffUserId='',liffReady=false,liffInitDone=false,liffOverride=false;
-function liffActive(){return (LIFF_ID&&liffInitDone)||liffOverride;}
-function isLineBrowser(){return /Line\//i.test(navigator.userAgent)||liffOverride;}
-function updateLineLoginUI(){
- const block=$('lineLoginBlock');
- const startBtn=$('btnLineLoginStart');
- const usePw=$('btnLineLoginUsePassword');
- if(block)block.classList.toggle('hidden',!liffActive());
- const inLine=isLineBrowser();
- if(startBtn)startBtn.classList.toggle('hidden',inLine);
- if(usePw)usePw.classList.toggle('hidden',inLine);
- if(liffActive()&&!inLine)loadLineBinding();
- if(liffActive()&&liffUserId)loadLineBinding();
-}
-// หาชื่อพนักงานจาก LINE userId ที่ผูกไว้
-async function findEmployeeByLineUserId(userId){
- if(!userId)return null;
- const snap=await db.ref('lineUsers').once('value');
- const all=snap.val()||{};
- const hit=Object.entries(all).find(([,v])=>v&&v.userId===userId);
- return hit?hit[0]:null;
-}
-// เข้าสู่ระบบด้วย LINE: ผูกบัญชีแล้วเข้าระบบทันที ถ้ายังไม่ผูกให้ไปที่หน้าเข้าสู่ระบบปกติ
-async function loginWithLine(){
- if(!liffUserId){showToast('ยังไม่ได้รับข้อมูลจาก LINE กรุณาลองใหม่',true);return;}
- try{
-  const name=await findEmployeeByLineUserId(liffUserId);
-  if(!name){showToast('บัญชี LINE นี้ยังไม่ได้ผูกกับพนักงาน กรุณาเข้าสู่ระบบด้วยรหัสผ่านก่อน แล้วกดปุ่ม “ผูก LINE”',true);showLineStart(false);return;}
-  await enterEmployeeSession(name);
-  showToast('เข้าสู่ระบบด้วย LINE สำเร็จ');
- }catch(err){console.error(err);showToast('เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: '+(err.message||err.code),true);}
-}
-// เข้าระบบในโหมดพนักงานโดยไม่ใช้รหัสผ่าน (ใช้กับ LINE ที่ผูกแล้ว / LINE Login)
-async function enterEmployeeSession(empName){
- currentUser=empName;managerMode=false;adminMode=false;
- const empSel=$('empName');
- if(empSel){empSel.innerHTML='';const opt=document.createElement('option');opt.value=empName;opt.textContent=empName;empSel.appendChild(opt);empSel.value=empName;empSel.disabled=true;}
- const info=$('empUserInfo');if(info)info.textContent='พนักงาน: '+escapeHTML(empName);
- showPage('employeePage');
- renderEmployeeRequests();
- subscribeToLeaveData();
- updateLineLinkButton();
-}
-// เพิ่มปุ่ม “ผูก LINE” ในหน้า LINE (LIFF เท่านั้น เพราะหน้าเว็บปกติไม่รู้ LINE userId)
-function updateLineLinkButton(){
- const btn=$('btnLinkLine');if(!btn)return;
- btn.classList.toggle('hidden',!(liffActive()&&liffUserId&&!managerMode&&currentUser));
-}
-async function loadLineBinding(){
- const btn=$('btnLinkLine');if(!btn||!liffUserId)return;
- try{
-  const snap=await db.ref('lineUsers').once('value');
-  const all=snap.val()||{};
-  const entries=Object.entries(all);
-  const mine=entries.find(([,v])=>v&&v.userId===liffUserId);
-  if(mine){btn.classList.add('hidden');return;}          // ผูกแล้ว
-  const taken=entries.map(([k])=>k);
-  const free=EMPLOYEE_LIST.filter(n=>!taken.includes(n)); // เฉพาะชื่อที่ยังว่าง
-  const opts=free.length?free.map(n=>`<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`).join(''):'<option value="">-- ไม่มีชื่อว่าง --</option>';
-  btn.innerHTML=`<i class="fa-brands fa-line mr-1"></i> ผูก LINE`;
-  btn.onclick=async()=>{
-   const sel=document.getElementById('lineLinkSelect');
-   const name=sel?sel.value:'';
-   if(!name){showToast('ไม่มีชื่อพนักงานที่สามารถผูกได้',true);return;}
-   if(!confirm(`ผูกบัญชี LINE นี้กับ “${name}” ใช่หรือไม่?\n\nหลังจากผูกแล้ว คุณจะเข้าสู่ระบบด้วย LINE ได้ทันที`))return;
-   try{
-    await db.ref('lineUsers/'+name).set({userId:liffUserId,updatedAt:new Date().toISOString()});
-    btn.classList.add('hidden');
-    showToast('ผูก LINE สำเร็จ — ต่อไปกด “เข้าสู่ระบบด้วย LINE” ได้เลย');
-   }catch(err){console.error(err);showToast('ผูก LINE ไม่สำเร็จ: '+(err.message||err.code),true);}
-  };
-  if(!document.getElementById('lineLinkSelect')){
-   const box=document.createElement('span');box.className='inline-flex items-center gap-1 ml-1';
-   box.innerHTML=`<select id="lineLinkSelect" class="px-2 py-1 border rounded-lg text-sm">${opts}</select>`;
-   btn.insertAdjacentElement('afterend',box);
-  }else{
-   document.getElementById('lineLinkSelect').innerHTML=opts;
-  }
- }catch(err){console.warn('loadLineBinding failed',err);}
-}
-function showLineStart(show){
- const ls=$('lineLoginStart'),lb=$('lineLoginBlock');
- if(!ls||!lb)return;
- ls.classList.toggle('hidden',!show);
- lb.classList.toggle('hidden',show||!LIFF_ID);
-}
-async function initLineLogin(){
- if(!LIFF_ID){updateLineLoginUI();return;}
- if(!window.liff){setTimeout(initLineLogin,500);return;}
- try{
-  await liff.init({liffId:LIFF_ID});
-  liffInitDone=true;
-  // เปิดจากในแอป LINE เท่านั้น (ในเบราว์เซอร์ปกติจะไม่บังคับให้ล็อกอิน LINE)
-  const inClient=(typeof liff.isInClient==='function')&&liff.isInClient();
-  if(inClient||isLineBrowser()){
-   if(!liff.isLoggedIn()){liff.login({redirectUri:location.href});return;}
-   const profile=await liff.getProfile();
-   liffUserId=profile.userId;
-   liffReady=true;
-   const name=await findEmployeeByLineUserId(liffUserId);
-   if(name){await enterEmployeeSession(name);showToast('เข้าสู่ระบบด้วย LINE สำเร็จ');}
-   else{showLineStart(true);}
-  }
- }catch(err){
-  console.warn('LIFF init failed',err);
- }
- updateLineLoginUI();
- updateLineLinkButton();
-}
-
 function showToast(msg,isError=false){const t=$('toast');t.textContent=msg;t.classList.toggle('bg-red-600',isError);t.classList.toggle('bg-green-600',!isError);t.classList.remove('translate-y-32','opacity-0');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('translate-y-32','opacity-0'),3500);}const NOTIFY_BASE='https://router-leave-notify.pages.dev';function notifyLeave(action,data){try{fetch(NOTIFY_BASE+'/api/line-notify',{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(Object.assign({action},data||{}))}).catch(()=>{});}catch(e){}}
 function stopDataListener(){if(firebaseListener){db.ref('leaveRequests').off('value',firebaseListener);firebaseListener=null;}}
 function logout(){stopDataListener();stopUsersListener();stopActivityListener();activityLogs=[];managerMode=false;adminMode=false;currentUser=null;const empSel=$('empName');if(empSel){empSel.disabled=false;empSel.innerHTML='<option value="">-- กรุณาเลือกชื่อ-นามสกุล --</option>';EMPLOYEE_LIST.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;empSel.appendChild(o);});}const myReq=$('myRequests');if(myReq)myReq.innerHTML='<p class="text-gray-500 text-center py-4">ยังไม่มีประวัติของคุณ</p>';if($('loginError'))$('loginError').classList.add('hidden');if($('adminPanel'))$('adminPanel').classList.add('hidden');hideAdminLogin();showPage('loginPage');showToast('ออกจากระบบเรียบร้อย');}
@@ -1002,7 +864,7 @@ function downloadAllRecords(){if(!leaveRequests.length){showToast('ไม่ม�
 async function handleSubmit(e){e.preventDefault();if(!$('submitBtn').disabled){}const empName=$('empName').value,leaveType=$('leaveType').value,startDate=$('startDate').value,endDate=$('endDate').value,reason=$('reason').value.trim();if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลให้ครบถ้วน',true);return;}if(!calculateDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}if(!EMPLOYEE_LIST.includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}if(findDuplicateRequest(empName,startDate,endDate).length){showToast('คุณมีคำขอในช่วงวันนี้อยู่แล้ว กรุณาตรวจสอบรายการของคุณ',true);return;}const own=findOwnOverlaps(empName,startDate,endDate);if(own.length){showToast(`ช่วงวันที่ลาทับซ้อนกับคำขอเดิมของคุณ (${own[0].startDate} ถึง ${own[0].endDate})`,true);return;}const conflicts=checkLeaveAvailability(startDate,endDate);if(conflicts.length){showToast(`วันที่ ${conflicts[0]} มีผู้ลาเต็มโควตาแล้ว (2 คน/วัน)`,true);return;}if(!(await verifyEmployeeTransaction(empName)))return;const btn=$('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';try{const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('leaveDays').value),reason,status:STATUS.PENDING,submittedAt:new Date().toLocaleString('th-TH'),submittedAtISO:new Date().toISOString()};const reqRef=db.ref('leaveRequests').push(newRequest);logActivity(empName,'submit',`${leaveType} · ${startDate} ถึง ${endDate} (${$('leaveDays').value} วัน) · เหตุผล: ${reason}`,'พนักงาน',reqRef.key);notifyLeave('new-request',newRequest);currentUser=empName;showToast('ส่งคำขอลาสำเร็จ');$('leaveType').value='';$('startDate').value='';$('endDate').value='';$('leaveDays').value='';$('reason').value='';$('empName').value=empName;renderEmployeeRequests();}catch(err){console.error(err);showToast('บันทึกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';}}
 async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action,req=leaveRequests.find(r=>r.id===id);if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(!managerMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
 if(action==='approve')notifyLeave('approved',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});else if(action==='reject')notifyLeave('rejected',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});showToast(message);}catch(err){console.error(err);showToast('อัปเดตไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
-document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();initLineLogin();try{await bootstrapDefaultUsers();}catch(e){}if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnLineLogin')) $('btnLineLogin').addEventListener('click',loginWithLine);if($('btnLineLoginStart')) $('btnLineLoginStart').addEventListener('click',loginWithLine);if($('btnLineLoginUsePassword')) $('btnLineLoginUsePassword').addEventListener('click',()=>showLineStart(false));if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',()=>$('adminLoginForm').classList.remove('hidden'));if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const btn=e.target.closest('button[data-action]');if(btn)handleManagerAction(btn);});});
+document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();try{await bootstrapDefaultUsers();}catch(e){}if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',()=>$('adminLoginForm').classList.remove('hidden'));if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const btn=e.target.closest('button[data-action]');if(btn)handleManagerAction(btn);});});
 </script>
                                                 </body>
                                               </html>
