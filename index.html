@@ -277,15 +277,8 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                               <i class="fa fa-rotate mr-1"></i> รีเฟรช</button>
                                           </div>
                                           <p class="text-sm text-teal-800 mb-3">แสดงบัญชีผู้ใช้และรหัสผ่านที่ตั้งไว้ของพนักงานทุกคน (เฉพาะโหมดผู้ดูแล)</p>
-                                          <div class="summary-scroll">
-                                            <table>
-                                              <thead>
-                                                <tr><th>ชื่อพนักงาน</th><th>Username</th><th>รหัสผ่าน</th><th>บทบาท</th></tr>
-                                              </thead>
-                                              <tbody id="passwordTableBody">
-                                                <tr><td colspan="4">กำลังโหลดข้อมูล...</td></tr>
-                                              </tbody>
-                                            </table>
+                                          <div id="passwordTableBody" class="max-h-64 overflow-y-auto space-y-2 text-sm">
+                                            <p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>
                                           </div>
                                         </section>
                                         <section id="managerDashboard" class="mb-6 space-y-4">
@@ -486,15 +479,16 @@ function renderPasswordTable(data){
     role: u.role||'user',
     updatedAt: u.passwordUpdatedAt||''
   })).sort((a,b)=>a.name.localeCompare(b.name,'th'));
-  body.innerHTML=rows.length?rows.map(r=>`<tr><td>${escapeHTML(r.name)}</td><td>${escapeHTML(r.username)}</td><td class="font-mono">${escapeHTML(r.password)}</td><td>${escapeHTML(r.role)}${r.updatedAt?'<br><span class="text-xs text-gray-500">อัปเดต: '+escapeHTML(new Date(r.updatedAt).toLocaleString('th-TH'))+'</span>':''}</td></tr>`).join(''):'<tr><td colspan="4">ยังไม่มีบัญชีผู้ใช้</td></tr>';
+  if(!rows.length){ body.innerHTML='<p class="text-gray-500 text-center py-2">ยังไม่มีบัญชีผู้ใช้</p>'; return; }
+  body.innerHTML=rows.map(r=>`<div class="p-2 rounded bg-white border border-gray-200"><div class="flex flex-wrap justify-between items-center gap-2 mb-1"><span class="font-semibold">👤 ${escapeHTML(r.name)}</span><span class="text-xs font-bold text-teal-700">${escapeHTML(r.role)}</span></div><div class="space-y-1 pl-2"><div class="text-xs flex flex-wrap justify-between gap-1"><span>🔑 Username: <span class="font-mono">${escapeHTML(r.username)}</span></span><span>รหัสผ่าน: <span class="font-mono font-semibold">${escapeHTML(r.password)}</span></span></div>${r.updatedAt?`<div class="text-xs text-gray-500">อัปเดต: ${escapeHTML(new Date(r.updatedAt).toLocaleString('th-TH'))}</div>`:''}</div></div>`).join('');
 }
 function loadPasswordTable(){
   const body=$('passwordTableBody'); if(!body) return;
-  body.innerHTML='<tr><td colspan="4">กำลังโหลดข้อมูล...</td></tr>';
+  body.innerHTML='<p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>';
   stopUsersListener();
   usersListener=db.ref('users').on('value',snap=>{
     renderPasswordTable(snap.val()||{});
-  },err=>{ console.error(err); body.innerHTML='<tr><td colspan="4">โหลดข้อมูลไม่สำเร็จ</td></tr>'; });
+  },err=>{ console.error(err); body.innerHTML='<p class="text-red-500 text-center py-2">โหลดข้อมูลไม่สำเร็จ</p>'; });
 }
 async function changeOwnPassword(){
   if(!currentUser||typeof currentUser!=='string'){ showToast('กรุณาเข้าสู่ระบบก่อน',true); return; }
