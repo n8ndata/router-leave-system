@@ -3,7 +3,7 @@
   <head>
     <base href="https://n8ndata.github.io/router-leave-system/">
       <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
           <title>ROUTER DEPT | ระบบขอลาพนักงาน</title>
           <link rel="preconnect" href="https://fonts.googleapis.com">
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
 
 /* ROUTERROOM-INSPIRED UI LAYER — visual-only overrides; leave original IDs and JS intact */
 :root{color-scheme:light;--router-900:#082f49;--router-800:#0c4a6e;--router-700:#075985;--router-600:#0369a1;--router-500:#0284c7;--router-100:#e0effe;--router-50:#f0f7ff;--line:#e2e8f0;--ink:#1e293b}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Prompt',system-ui,sans-serif!important;background:#f1f5f9!important;color:#1e293b!important;font-size:14px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;touch-action:pan-x pan-y}html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{font-family:'Prompt',system-ui,sans-serif!important;background:#f1f5f9!important;color:#1e293b!important;font-size:14px}
 body:before{content:'ROUTER DEPT  /  ระบบขอลาพนักงาน';display:block;min-height:58px;padding:16px clamp(16px,4vw,48px);background:linear-gradient(100deg,#0f172a 0%,#1e3a8a 52%,#082f49 100%);color:#fff;font-size:16px;font-weight:700;letter-spacing:.2px;box-shadow:0 5px 18px #0f172a20}
 #loginPage{min-height:calc(100vh - 58px)!important;align-items:flex-start!important;padding-top:clamp(28px,6vh,64px)!important;background:radial-gradient(ellipse at top,#dbeafe 0%,#f1f5f9 56%)!important}
 #loginPage>div{border:1px solid #e2e8f0;border-radius:24px!important;padding:clamp(22px,5vw,36px)!important;box-shadow:0 18px 50px #0f172a12!important}
@@ -44,6 +44,7 @@ body:before{content:'ROUTER DEPT  /  ระบบขอลาพนักงา�
 #employeePage .bg-indigo-50,#managerPage .bg-indigo-50{background:#eef2ff!important;border-color:#c7d2fe!important}
 #employeePage .rounded-lg,#managerPage .rounded-lg{border-radius:12px!important}
 input:not([type=checkbox]),select,textarea{font:inherit!important;border-color:#cbd5e1!important;border-radius:10px!important;min-height:42px;transition:border-color .15s,box-shadow .15s}
+@media(max-width:640px){input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}}
 input:focus,select:focus,textarea:focus{outline:none!important;border-color:#0284c7!important;box-shadow:0 0 0 3px #0284c71c!important}
 button{font-family:inherit!important;transition:background-color .15s,border-color .15s,box-shadow .15s,transform .15s}
 button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38bdf8;outline-offset:2px}
