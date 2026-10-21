@@ -415,7 +415,16 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                           <button id="btnCloseStats" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-2 rounded-lg text-sm font-medium">
                                                             <i class="fa fa-arrow-left mr-1"></i> กลับหน้าหัวหน้างาน</button>
                                                         </div>
+                                                        <div class="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-slate-200">
+                                                          <label for="statsMonthFilter" class="text-sm font-medium text-slate-700">ช่วงเวลาที่แสดง:</label>
+                                                          <select id="statsMonthFilter" class="px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"></select>
+                                                          <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
+                                                            <input type="checkbox" id="statsOnlyWithData" class="w-4 h-4" checked>
+                                                            <span>แสดงเฉพาะพนักงานที่มีวันลา</span>
+                                                          </label>
+                                                          <span id="statsRangeInfo" class="text-xs text-slate-500 sm:ml-auto"></span>
                                                       </div>
+                                                        </div>
                                                       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                                                         <div class="rounded-lg border bg-slate-50 p-3">
                                                           <p class="text-sm">รายการทั้งหมด</p>
@@ -434,7 +443,8 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                           <p id="statDays" class="text-3xl font-bold text-blue-700">0</p>
                                                         </div>
                                                       </div>
-                                                      <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
+                                                      <div id="statsChartsWrap">
+                                                        <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
                                                         <h3 class="font-bold mb-3">👥 จำนวนวันลาแยกตามพนักงาน (แยกสีตามประเภทการลา)</h3>
                                                         <div class="overflow-x-auto -mx-4 px-4">
                                                           <div id="chartByEmployeeWrap" style="position:relative;height:420px;min-width:0">
@@ -455,6 +465,12 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                             <canvas id="chartByStatus"></canvas>
                                                           </div>
                                                         </div>
+                                                      </div>
+                                                      </div>
+                                                      <div id="statsEmpty" class="hidden bg-white rounded-xl shadow-lg p-10 text-center">
+                                                        <p class="text-3xl mb-2">📭</p>
+                                                        <p class="font-bold text-slate-700">ไม่มีข้อมูลการลาในช่วงเวลาที่เลือก</p>
+                                                        <p class="text-sm text-slate-500 mt-1">ลองเลือกช่วงเวลาอื่น หรือเลือก “ทุกช่วงเวลา (ข้อมูลทั้งหมด)”</p>
                                                       </div>
                                                     </div>
                                                   </div>
@@ -882,78 +898,157 @@ function renderManagerDashboard(){
  const typeBody=$('dashTypeRows');if(typeBody)typeBody.innerHTML=types.map(t=>{const a=rows.filter(r=>(r.leaveType||'ไม่ระบุประเภท')===t);return `<tr><td>${escapeHTML(t)}</td><td>${a.length}</td><td>${a.filter(approved).length}</td><td>${a.filter(pending).length}</td><td>${a.filter(rejected).length}</td><td>${a.filter(cancelled).length}</td></tr>`;}).join('');
  const list=$('dashOutstandingList');if(list){const a=rows.filter(outstanding);list.innerHTML=a.length?a.map(r=>`<div class="summary-item border rounded-lg p-3 bg-white"><p class="font-semibold">${escapeHTML(r.empName||'ไม่ระบุชื่อ')} — ${escapeHTML(r.leaveType||'ไม่ระบุประเภท')}</p><p>${escapeHTML(r.startDate||'-')} ถึง ${escapeHTML(r.endDate||'-')} · ${escapeHTML(r.leaveDays??'-')} วัน</p><p>สถานะ: ${escapeHTML(r.cancelStatus==='รอยกเลิก'?'รออนุมัติยกเลิก':r.status||'รออนุมัติ')}</p><p>เหตุผล: ${escapeHTML(r.cancelStatus==='รอยกเลิก'?(r.cancelReason||'ไม่ระบุ'):r.reason||'ไม่ระบุ')}</p></div>`).join(''):'<p class="summary-item text-green-700">ไม่มีรายการค้างดำเนินการ</p>';}
 }
-function splitEmployeeName(name){const parts=String(name||'').trim().split(/\s+/).filter(Boolean);if(parts.length<2)return [String(name||'')];const mid=Math.ceil(parts.length/2);return [parts.slice(0,mid).join(' '),parts.slice(mid).join(' ')];}
+
 let statsFontLoaded=false;
 function loadStatsFonts(){if(statsFontLoaded||!document.fonts||!document.fonts.load)return;Promise.all([document.fonts.load('400 11px Prompt'),document.fonts.load('400 12px Prompt')]).catch(()=>{}).then(()=>{statsFontLoaded=true;const p=$('statsPage');if(p&&!p.classList.contains('hidden'))renderStatsCharts();});}
+const LEAVE_TYPE_COLORS={'ลาพักร้อน (AN)':'#2563eb','ลากิจ (P)':'#16a34a','ลาป่วย (S)':'#f59e0b','ลากิจพิเศษ (PN)':'#dc2626','Thank You Day':'#9333ea','ไม่ระบุประเภท':'#64748b'};
+const EXTRA_TYPE_COLORS=['#0891b2','#db2777','#65a30d','#ea580c','#4f46e5','#0f766e','#b45309','#7c3aed'];
+const statsFilter={month:'all',onlyWithData:true};
 const statsCharts={byEmployee:null,byType:null,byStatus:null};
+function statsMonthKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;}
+function statsMonthLabel(key){const [y,m]=String(key).split('-').map(Number);if(!y||!m)return String(key);return new Date(y,m-1,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'});}
+function collectStatsMonths(){
+  const set=new Set();
+  const add=d=>{if(d&&!isNaN(d.getTime()))set.add(statsMonthKey(d));};
+  (leaveRequests||[]).forEach(r=>{
+    const s=parseLocalDate(r.startDate),e=parseLocalDate(r.endDate);
+    if(s&&e){
+      const cur=new Date(s.getFullYear(),s.getMonth(),1),last=new Date(e.getFullYear(),e.getMonth(),1);
+      let guard=0;
+      while(cur<=last&&guard<36){add(cur);cur.setMonth(cur.getMonth()+1);guard++;}
+    }else if(s){add(s);}
+    else if(r.submittedAtISO){add(new Date(r.submittedAtISO));}
+  });
+  add(new Date());
+  return [...set].sort().reverse();
+}
+function refreshStatsFilterOptions(){
+  const sel=$('statsMonthFilter');if(!sel)return;
+  const months=collectStatsMonths();
+  if(statsFilter.month!=='all'&&!months.includes(statsFilter.month))statsFilter.month='all';
+  sel.innerHTML='<option value="all">ทุกช่วงเวลา (ข้อมูลทั้งหมด)</option>'+months.map(m=>`<option value="${m}">${statsMonthLabel(m)}</option>`).join('');
+  sel.value=statsFilter.month;
+  const box=$('statsOnlyWithData');if(box)box.checked=!!statsFilter.onlyWithData;
+}
+function statsMonthDays(r,y,m){
+  const s=parseLocalDate(r.startDate),e=parseLocalDate(r.endDate);
+  if(!s||!e)return null;
+  const ms=Date.UTC(s.getFullYear(),s.getMonth(),s.getDate());
+  const me=Date.UTC(e.getFullYear(),e.getMonth(),e.getDate());
+  const mStart=Date.UTC(y,m,1),mEnd=Date.UTC(y,m+1,1)-86400000;
+  const os=Math.max(ms,mStart),oe=Math.min(me,mEnd);
+  return oe<os?0:Math.round((oe-os)/86400000)+1;
+}
+function filterStatsRows(rows){
+  const list=rows||[];
+  if(statsFilter.month==='all')return list.map(r=>({r,days:Number(r.leaveDays)||0}));
+  const [y,m]=String(statsFilter.month).split('-').map(Number);
+  const out=[];
+  list.forEach(r=>{
+    let days=statsMonthDays(r,y,m-1);
+    if(days===null){
+      const d=r.submittedAtISO?new Date(r.submittedAtISO):null;
+      if(d&&!isNaN(d.getTime())&&d.getFullYear()===y&&d.getMonth()===m-1)days=Number(r.leaveDays)||0;else return;
+    }
+    if(days>0)out.push({r,days});
+  });
+  return out;
+}
 function openStatsPage(){
- if(!managerMode){showToast('เฉพาะโหมดหัวหน้างานเท่านั้น',true);return;}
- showPage('statsPage');
- renderStatsCharts();
- window.scrollTo({top:0,behavior:'smooth'});
+  if(!managerMode){showToast('เฉพาะโหมดหัวหน้างานเท่านั้น',true);return;}
+  showPage('statsPage');
+  refreshStatsFilterOptions();
+  renderStatsCharts();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function closeStatsPage(){showPage('managerPage');}
 function renderStatsCharts(){
- const page=$('statsPage');
- if(!page||page.classList.contains('hidden'))return;
- if(typeof Chart==='undefined'){showToast('โหลดไลบรารีกราฟไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต',true);return;}
+  const page=$('statsPage');
+  if(!page||page.classList.contains('hidden'))return;
+  if(typeof Chart==='undefined'){showToast('โหลดไลบรารีกราฟไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต',true);return;}
   loadStatsFonts();
- const rows=leaveRequests||[];
- const paletteBase=['#2563eb','#16a34a','#f59e0b','#dc2626','#9333ea','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5'];
- const cancelled=r=>isCancelled(r);
- const approved=r=>!cancelled(r)&&normalizeStatus(r.status)===STATUS.APPROVED;
- const pending=r=>!cancelled(r)&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_PENDING&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_REJECTED&&(normalizeStatus(r.status)===STATUS.PENDING||normalizeStatus(r.status)===STATUS.IN_PROGRESS);
- const daysOf=r=>Number(r.leaveDays)||0;
- const sumDays=a=>a.reduce((s,r)=>s+daysOf(r),0);
- const set=(id,n)=>{const el=$(id);if(el)el.textContent=String(n);};
- set('statTotal',rows.length);set('statApproved',rows.filter(approved).length);set('statPending',rows.filter(pending).length);set('statDays',sumDays(rows.filter(r=>!cancelled(r))));
-
- const allTypes=[...new Set(['ลาพักร้อน (AN)','ลากิจ (P)','ลาป่วย (S)','ลากิจพิเศษ (PN)','Thank You Day',...rows.map(r=>r.leaveType||'ไม่ระบุประเภท')])];
- const empNames=[...new Set([...EMPLOYEE_LIST,...rows.map(r=>r.empName).filter(Boolean)])];
- const empTotals=empNames.map(name=>({name,days:sumDays(rows.filter(r=>r.empName===name&&!cancelled(r))),count:rows.filter(r=>r.empName===name).length}));
- empTotals.sort((a,b)=>b.days-a.days);
- const empOrdered=empTotals.map(e=>e.name);
- const empTypeDatasets=allTypes.map((t,i)=>({label:t,data:empOrdered.map(name=>sumDays(rows.filter(r=>r.empName===name&&!cancelled(r)&&(r.leaveType||'ไม่ระบุประเภท')===t))),backgroundColor:paletteBase[i%paletteBase.length],stack:'s',borderRadius:3}));
-
- const typeMap={};
- rows.forEach(r=>{const t=r.leaveType||'ไม่ระบุประเภท';typeMap[t]=(typeMap[t]||0)+daysOf(r);});
- const typeLabels=Object.keys(typeMap),typeValues=typeLabels.map(t=>typeMap[t]);
-
- const statusMap={'อนุมัติ':0,'รออนุมัติ':0,'ไม่อนุมัติ':0,'ยกเลิกแล้ว':0};
- rows.forEach(r=>{if(cancelled(r))statusMap['ยกเลิกแล้ว']++;else if(normalizeStatus(r.status)===STATUS.APPROVED)statusMap['อนุมัติ']++;else if(normalizeStatus(r.status)===STATUS.REJECTED)statusMap['ไม่อนุมัติ']++;else statusMap['รออนุมัติ']++;});
-
- const palette=paletteBase;
- const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Prompt'}}}}};
-
- if(statsCharts.byEmployee)statsCharts.byEmployee.destroy();
- const empCtx=$('chartByEmployee');
- if(empCtx){
-  const isNarrow=window.innerWidth<=640;
-  const empFontSize=isNarrow?11:12;
-  const empLegendSize=isNarrow?10:11;
-  const wrapEl=$('chartByEmployeeWrap');
-  if(wrapEl)wrapEl.style.height=Math.max(300,empOrdered.length*34+80)+'px';
-  const measureCtx=(()=>{const c=document.createElement('canvas').getContext('2d');c.font=`${empFontSize}px Prompt, sans-serif`;return c;})();
-  const empTickLabels=empOrdered.map(n=>isNarrow?splitEmployeeName(n):n);
-  const longestNamePx=empTickLabels.reduce((m,label)=>Math.max(m,(Array.isArray(label)?label:[label]).reduce((mm,l)=>Math.max(mm,measureCtx.measureText(l).width),0)),0);
-  const yAxisMinWidth=Math.ceil(longestNamePx)+14;
-  if(wrapEl){
-    const parent=wrapEl.parentElement;
-    const availWidth=(parent?parent.clientWidth:window.innerWidth)||window.innerWidth;
-    const minBarArea=isNarrow?150:260;
-    const neededWidth=yAxisMinWidth+minBarArea;
-    wrapEl.style.minWidth=(neededWidth>availWidth?neededWidth+'px':'0');
+  refreshStatsFilterOptions();
+  const scoped=filterStatsRows(leaveRequests||[]);
+  const rows=scoped.map(s=>s.r);
+  const daysOf=r=>{const hit=scoped.find(s=>s.r===r);return hit?hit.days:((Number(r.leaveDays))||0);};
+  const cancelled=r=>isCancelled(r);
+  const approved=r=>!cancelled(r)&&normalizeStatus(r.status)===STATUS.APPROVED;
+  const pending=r=>!cancelled(r)&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_PENDING&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_REJECTED&&(normalizeStatus(r.status)===STATUS.PENDING||normalizeStatus(r.status)===STATUS.IN_PROGRESS);
+  const sumDays=a=>a.reduce((s,r)=>s+daysOf(r),0);
+  const set=(id,n)=>{const el=$(id);if(el)el.textContent=String(n);};
+  const activeRows=rows.filter(r=>!cancelled(r));
+  const totalDays=sumDays(activeRows);
+  set('statTotal',rows.length);set('statApproved',rows.filter(approved).length);set('statPending',rows.filter(pending).length);set('statDays',totalDays);
+  const rangeInfo=$('statsRangeInfo');
+  if(rangeInfo)rangeInfo.textContent=(statsFilter.month==='all'?'ทุกช่วงเวลา':statsMonthLabel(statsFilter.month))+' · '+rows.length+' รายการ · '+totalDays+' วัน';
+  const typeOf=r=>r.leaveType||'ไม่ระบุประเภท';
+  const usedTypes=[...new Set(activeRows.map(typeOf))];
+  const extraTypes=usedTypes.filter(t=>!LEAVE_TYPE_COLORS[t]);
+  const typeColor=t=>LEAVE_TYPE_COLORS[t]||EXTRA_TYPE_COLORS[extraTypes.indexOf(t)%EXTRA_TYPE_COLORS.length];
+  const empNames=[...new Set([...EMPLOYEE_LIST,...rows.map(r=>r.empName).filter(Boolean)])];
+  const empTotals=empNames.map(name=>({name,days:sumDays(activeRows.filter(r=>r.empName===name)),count:rows.filter(r=>r.empName===name).length}));
+  empTotals.sort((a,b)=>b.days-a.days||b.count-a.count);
+  const visibleEmps=statsFilter.onlyWithData?empTotals.filter(e=>e.days>0):empTotals;
+  const empOrdered=visibleEmps.map(e=>e.name);
+  const empTypeDatasets=usedTypes.map(t=>({label:t,data:empOrdered.map(name=>sumDays(activeRows.filter(r=>r.empName===name&&typeOf(r)===t))),backgroundColor:typeColor(t),stack:'s',borderRadius:3}));
+  const typeMap={};
+  activeRows.forEach(r=>{const t=typeOf(r);typeMap[t]=(typeMap[t]||0)+daysOf(r);});
+  const typeLabels=usedTypes.filter(t=>(typeMap[t]||0)>0);
+  const typeValues=typeLabels.map(t=>typeMap[t]);
+  const statusMap={'อนุมัติ':0,'รออนุมัติ':0,'ไม่อนุมัติ':0,'ยกเลิกแล้ว':0};
+  rows.forEach(r=>{if(cancelled(r))statusMap['ยกเลิกแล้ว']++;else if(normalizeStatus(r.status)===STATUS.APPROVED)statusMap['อนุมัติ']++;else if(normalizeStatus(r.status)===STATUS.REJECTED)statusMap['ไม่อนุมัติ']++;else statusMap['รออนุมัติ']++;});
+  const palette=typeLabels.map(typeColor);
+  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Prompt'}}}}};
+  const hasData=rows.length>0;
+  const chartsWrap=$('statsChartsWrap'),emptyBox=$('statsEmpty');
+  if(chartsWrap)chartsWrap.classList.toggle('hidden',!hasData);
+  if(emptyBox)emptyBox.classList.toggle('hidden',hasData);
+  if(statsCharts.byEmployee){statsCharts.byEmployee.destroy();statsCharts.byEmployee=null;}
+  if(statsCharts.byType){statsCharts.byType.destroy();statsCharts.byType=null;}
+  if(statsCharts.byStatus){statsCharts.byStatus.destroy();statsCharts.byStatus=null;}
+  if(!hasData)return;
+  const empCtx=$('chartByEmployee');
+  if(empCtx){
+   const isNarrow=window.innerWidth<=640;
+   const empFontSize=isNarrow?11:12;
+   const empLegendSize=isNarrow?10:11;
+   const wrapEl=$('chartByEmployeeWrap');
+   const measureCtx=(()=>{const c=document.createElement('canvas').getContext('2d');c.font=`${empFontSize}px Prompt, sans-serif`;return c;})();
+   const empTickLabels=empOrdered;
+   const longestNamePx=empTickLabels.reduce((m,n)=>Math.max(m,measureCtx.measureText(n).width),0);
+   const diagAngle=isNarrow?Math.PI/4:0;
+   const diagDrop=isNarrow?Math.ceil(longestNamePx*Math.sin(diagAngle))+6:0;
+   const diagWidth=isNarrow?Math.ceil(longestNamePx*Math.cos(diagAngle)):Math.ceil(longestNamePx);
+   if(wrapEl)wrapEl.style.height=Math.max(300,empOrdered.length*34+80+diagDrop)+'px';
+   const yAxisMinWidth=diagWidth+14;
+   if(wrapEl){
+     const parent=wrapEl.parentElement;
+     const availWidth=(parent?parent.clientWidth:window.innerWidth)||window.innerWidth;
+     const minBarArea=isNarrow?150:260;
+     const neededWidth=yAxisMinWidth+minBarArea;
+     wrapEl.style.minWidth=(neededWidth>availWidth?neededWidth+'px':'0');
+   }
+   const empChartOptions=Object.assign({},baseOpts,{
+    indexAxis:'y',
+    layout:{padding:{left:0,right:8,bottom:diagDrop?diagDrop+10:0}},
+    plugins:{
+      legend:{position:'bottom',labels:{font:{family:'Prompt',size:empLegendSize},boxWidth:isNarrow?10:12}},
+      tooltip:{mode:'index',callbacks:{
+        label:c=>`${c.dataset.label}: ${c.parsed.x} วัน`,
+        footer:items=>'รวม: '+items.reduce((s,it)=>s+it.parsed.x,0)+' วัน'
+      }}
+    },
+    scales:{
+      x:{beginAtZero:true,stacked:true,ticks:{precision:0,font:{family:'Prompt',size:empLegendSize}}},
+      y:{stacked:true,ticks:{autoSkip:false,font:{family:'Prompt',size:empFontSize},color:'#1e293b',padding:isNarrow?3:4,maxRotation:isNarrow?45:0,minRotation:isNarrow?45:0,callback:(value,index)=>empTickLabels[index]||value}}
+    }
+  });
+  statsCharts.byEmployee=new Chart(empCtx,{type:'bar',data:{labels:empOrdered,datasets:empTypeDatasets},options:empChartOptions});
   }
-  statsCharts.byEmployee=new Chart(empCtx,{type:'bar',data:{labels:empOrdered,datasets:empTypeDatasets},options:Object.assign({},baseOpts,{indexAxis:'y',layout:{padding:{left:0,right:8}},plugins:{legend:{position:'bottom',labels:{font:{family:'Prompt',size:empLegendSize},boxWidth:isNarrow?10:12}},tooltip:{mode:'index',callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x} วัน`,footer:items=>'รวม: '+items.reduce((s,it)=>s+it.parsed.x,0)+' วัน'}}},scales:{x:{beginAtZero:true,stacked:true,ticks:{precision:0,font:{family:'Prompt',size:empLegendSize}}},y:{stacked:true,ticks:{autoSkip:false,font:{family:'Prompt',size:empFontSize},color:'#1e293b',padding:isNarrow?3:4,maxRotation:0,minRotation:0,callback:(value,index)=>empTickLabels[index]||value}}}})});
- }
-
- if(statsCharts.byType)statsCharts.byType.destroy();
- const typeCtx=$('chartByType');
- if(typeCtx)statsCharts.byType=new Chart(typeCtx,{type:'doughnut',data:{labels:typeLabels,datasets:[{data:typeValues,backgroundColor:palette}]},options:Object.assign({},baseOpts,{plugins:{legend:{position:'bottom',labels:{font:{family:'Prompt'}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} วัน`}}}})});
-
- if(statsCharts.byStatus)statsCharts.byStatus.destroy();
- const statusCtx=$('chartByStatus');
- if(statusCtx)statsCharts.byStatus=new Chart(statusCtx,{type:'pie',data:{labels:Object.keys(statusMap),datasets:[{data:Object.values(statusMap),backgroundColor:['#16a34a','#f59e0b','#dc2626','#94a3b8']}]},options:Object.assign({},baseOpts,{plugins:{legend:{position:'bottom',labels:{font:{family:'Prompt'}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} รายการ`}}}})});
+  const typeCtx=$('chartByType');
+  if(typeCtx)statsCharts.byType=new Chart(typeCtx,{type:'doughnut',data:{labels:typeLabels,datasets:[{data:typeValues,backgroundColor:palette}]},options:Object.assign({},baseOpts,{plugins:{legend:{position:'bottom',labels:{font:{family:'Prompt'}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} วัน`}}}})});
+  const statusCtx=$('chartByStatus');
+  if(statusCtx)statsCharts.byStatus=new Chart(statusCtx,{type:'pie',data:{labels:Object.keys(statusMap),datasets:[{data:Object.values(statusMap),backgroundColor:['#16a34a','#f59e0b','#dc2626','#94a3b8']}]},options:Object.assign({},baseOpts,{plugins:{legend:{position:'bottom',labels:{font:{family:'Prompt'}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} รายการ`}}}})});
 }
 function clearEmployeeForm(){const name=$('empName').value;$('leaveForm').reset();$('empName').value=name;$('leaveDays').value='';showToast('ล้างข้อมูลที่ยังไม่ได้ส่งแล้ว');}function renderManagerRequests(){const pending=$('allRequests'),processed=$('processedRequests'),cancelContainer=$('cancelRequests');const undoPending=leaveRequests.filter(r=>normalizeStatus(r.status)===STATUS.IN_PROGRESS&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_PENDING);const waiting=leaveRequests.filter(r=>normalizeStatus(r.status)===STATUS.PENDING&&normalizeStatus(r.cancelStatus)!==STATUS.CANCELLED);const done=leaveRequests.filter(r=>!waiting.includes(r)&&!(normalizeStatus(r.cancelStatus)===STATUS.CANCEL_PENDING)&&(!undoPending.includes(r)||isCancelled(r)));pending.innerHTML=waiting.length?waiting.map(r=>{const conflicts=checkLeaveAvailability(r.startDate,r.endDate,r.id);return `<div class="border rounded-lg p-4 border-blue-200 bg-blue-50"><div class="mb-3"><p class="font-bold text-lg">👤 ${escapeHTML(r.empName)}</p><p class="text-sm"><strong>ประเภท:</strong> ${escapeHTML(r.leaveType)} | <strong>จำนวน:</strong> ${escapeHTML(r.leaveDays)} วัน</p><p class="text-sm"><strong>ช่วงวันที่:</strong> ${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)}</p><p class="text-sm break-words"><strong>เหตุผล:</strong> ${escapeHTML(r.reason)}</p><p class="text-xs text-gray-500">ส่งเมื่อ: ${escapeHTML(r.submittedAt)}</p>${conflicts.length?'<p class="text-xs text-orange-700 mt-1">⚠️ หากอนุมัติจะเกินโควตาในบางวัน</p>':''}</div><div class="flex gap-2"><button data-action="approve" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm"><i class="fa fa-check mr-1"></i> อนุมัติ</button><button data-action="reject" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"><i class="fa fa-times mr-1"></i> ไม่อนุมัติ</button></div></div>`;}).join(''):'<p class="text-gray-500 text-center py-4">ยังไม่มีคำขอลารอการอนุมัติ</p>';
 const cancelWaiting=leaveRequests.filter(r=>normalizeStatus(r.cancelStatus)===STATUS.CANCEL_PENDING);cancelContainer.innerHTML=cancelWaiting.length?cancelWaiting.map(r=>`<div class="border rounded-lg p-4 border-orange-200 bg-orange-50"><p class="font-bold text-lg">👤 ${escapeHTML(r.empName)}</p><p class="text-sm mt-1"><strong>ประเภท:</strong> ${escapeHTML(r.leaveType)} · ${escapeHTML(r.leaveDays)} วัน</p><p class="text-sm"><strong>ช่วงวันที่ลา:</strong> ${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)}</p><p class="text-sm"><strong>สถานะคำขอลาเดิม:</strong> ${escapeHTML(r.statusBeforeCancelRequest||'รออนุมัติ')}</p><p class="text-sm break-words"><strong>เหตุผลขอยกเลิก:</strong> ${escapeHTML(r.cancelReason||'ไม่ได้ระบุ')}</p><p class="text-xs text-gray-500">ส่งคำขอยกเลิกเมื่อ: ${escapeHTML(r.cancelRequestedAt||'')}</p><div class="flex flex-wrap gap-2 mt-3"><button data-action="approve-cancel" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"><i class="fa fa-check mr-1"></i> อนุมัติยกเลิก</button><button data-action="reject-cancel" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"><i class="fa fa-times mr-1"></i> ไม่อนุมัติยกเลิก</button></div></div>`).join(''):'<p class="text-gray-500 text-center py-3">ไม่มีคำขอยกเลิกวันลารออนุมัติ</p>';
@@ -993,7 +1088,7 @@ function downloadAllRecords(){if(!leaveRequests.length){showToast('ไม่ม�
 async function handleSubmit(e){e.preventDefault();if(!$('submitBtn').disabled){}const empName=$('empName').value,leaveType=$('leaveType').value,startDate=$('startDate').value,endDate=$('endDate').value,reason=$('reason').value.trim();if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลให้ครบถ้วน',true);return;}if(!calculateDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}if(!EMPLOYEE_LIST.includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}if(findDuplicateRequest(empName,startDate,endDate).length){showToast('คุณมีคำขอในช่วงวันนี้อยู่แล้ว กรุณาตรวจสอบรายการของคุณ',true);return;}const own=findOwnOverlaps(empName,startDate,endDate);if(own.length){showToast(`ช่วงวันที่ลาทับซ้อนกับคำขอเดิมของคุณ (${own[0].startDate} ถึง ${own[0].endDate})`,true);return;}const conflicts=checkLeaveAvailability(startDate,endDate);if(conflicts.length){showToast(`วันที่ ${conflicts[0]} มีผู้ลาเต็มโควตาแล้ว (2 คน/วัน)`,true);return;}if(!(await verifyEmployeeTransaction(empName)))return;const btn=$('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';try{const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('leaveDays').value),reason,status:STATUS.PENDING,submittedAt:new Date().toLocaleString('th-TH'),submittedAtISO:new Date().toISOString()};const reqRef=db.ref('leaveRequests').push(newRequest);logActivity(empName,'submit',`${leaveType} · ${startDate} ถึง ${endDate} (${$('leaveDays').value} วัน) · เหตุผล: ${reason}`,'พนักงาน',reqRef.key);notifyLeave('new-request',newRequest);currentUser=empName;showToast('ส่งคำขอลาสำเร็จ');$('leaveType').value='';$('startDate').value='';$('endDate').value='';$('leaveDays').value='';$('reason').value='';$('empName').value=empName;renderEmployeeRequests();}catch(err){console.error(err);showToast('บันทึกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';}}
 async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action,req=leaveRequests.find(r=>r.id===id);if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(!managerMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
 if(action==='approve')notifyLeave('approved',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});else if(action==='reject')notifyLeave('rejected',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});showToast(message);}catch(err){console.error(err);showToast('อัปเดตไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
-document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();loadStatsFonts();try{await bootstrapDefaultUsers();}catch(e){}if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',toggleAdminLogin);if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('btnOpenStats'))$('btnOpenStats').addEventListener('click',openStatsPage);if($('btnCloseStats'))$('btnCloseStats').addEventListener('click',closeStatsPage);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const delBtn=e.target.closest('button[data-action]');if(delBtn){handleManagerAction(delBtn);return;}const item=e.target.closest('.selectable-item');if(item){const wasSelected=item.classList.contains('is-selected');document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));if(!wasSelected)item.classList.add('is-selected');return;}document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));});});
+document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();loadStatsFonts();try{await bootstrapDefaultUsers();}catch(e){}if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',toggleAdminLogin);if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('btnOpenStats'))$('btnOpenStats').addEventListener('click',openStatsPage);if($('btnCloseStats'))$('btnCloseStats').addEventListener('click',closeStatsPage);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);if($('statsMonthFilter'))$('statsMonthFilter').addEventListener('change',e=>{statsFilter.month=e.target.value;renderStatsCharts();});if($('statsOnlyWithData'))$('statsOnlyWithData').addEventListener('change',e=>{statsFilter.onlyWithData=e.target.checked;renderStatsCharts();});document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const delBtn=e.target.closest('button[data-action]');if(delBtn){handleManagerAction(delBtn);return;}const item=e.target.closest('.selectable-item');if(item){const wasSelected=item.classList.contains('is-selected');document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));if(!wasSelected)item.classList.add('is-selected');return;}document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));});});
 let statsResizeTimer=null;
 window.addEventListener('resize',()=>{const page=$('statsPage');if(!page||page.classList.contains('hidden'))return;clearTimeout(statsResizeTimer);statsResizeTimer=setTimeout(()=>{renderStatsCharts();},250);});
 </script>
