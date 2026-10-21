@@ -986,6 +986,21 @@ const STATS_BUCKETS=[
   {key:'ยกเลิกแล้ว',label:'ยกเลิกแล้ว',color:'#94a3b8'}
 ];
 const STATS_SCOPES={approved:'อนุมัติแล้วเท่านั้น',withPending:'รวมที่รออนุมัติ',active:'รวมทุกสถานะ (ยังไม่ยกเลิก)'};
+const LEAVE_TYPE_COLORS={'ลาพักร้อน (AN)':'#2563eb','ลากิจ (P)':'#16a34a','ลาป่วย (S)':'#f59e0b','ลากิจพิเศษ (PN)':'#dc2626','Thank You Day':'#9333ea'};
+const EXTRA_TYPE_COLORS=['#0891b2','#db2777','#65a30d','#ea580c','#4f46e5','#0d9488','#be123c','#7c3aed','#a16207','#0f766e','#64748b','#475569'];
+// จัดสีประเภทการลาให้แต่ละประเภทได้สีที่ "ไม่ซ้ำกัน" เสมอ (กันสีชนกับประเภทอื่น)
+function leaveTypeColorMap(types){
+  const map={},used=new Set(Object.values(LEAVE_TYPE_COLORS));
+  let extra=0;
+  (types||[]).forEach(t=>{
+    if(map[t])return;
+    if(LEAVE_TYPE_COLORS[t]){map[t]=LEAVE_TYPE_COLORS[t];used.add(map[t]);return;}
+    let color=EXTRA_TYPE_COLORS.find(c=>!used.has(c));
+    if(!color){const hue=Math.round((extra*137.508)%360);extra++;color=`hsl(${hue},65%,45%)`;}
+    used.add(color);map[t]=color;
+  });
+  return map;
+}
 // จัดกลุ่มสถานะแบบ "หนึ่งคำขอ = หนึ่งสถานะ" เพื่อให้ตัวเลขทุกการ์ด/ทุกกราฟสอดคล้องกัน
 function statsBucket(req){const status=normalizeStatus(req.status);const cancelStatus=String(req.cancelStatus??'').trim();if(status===STATUS.CANCELLED||cancelStatus===STATUS.CANCELLED)return 'ยกเลิกแล้ว';if(cancelStatus===STATUS.CANCEL_PENDING)return 'รอยกเลิก';if(cancelStatus===STATUS.CANCEL_REJECTED)return 'ไม่อนุมัติยกเลิก';if(status===STATUS.APPROVED)return 'อนุมัติ';if(status===STATUS.REJECTED)return 'ไม่อนุมัติ';return 'รออนุมัติ';}
 function statsWorkdayCount(startDate,endDate){const s=parseLocalDate(startDate),e=parseLocalDate(endDate);if(!s||!e||e<s)return 0;let n=0;for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){const day=d.getDay();if(day!==0&&day!==6)n++;}return n;}
@@ -1150,7 +1165,7 @@ function renderStatsCharts(){
   const summary=$('statsFilterSummary');
   if(summary)summary.textContent=`ขอบเขตการนับวันลา: ${scopeText} · ช่วงเวลา: ${rangeText} · พนักงาน: ${statsState.empName||'ทุกคน'} · ประเภทการลา: ${statsState.leaveType||'ทุกประเภท'}${statsState.workdayOnly?' · นับเฉพาะวันทำงาน':''} · พบ ${rows.length} รายการ`;
   const updated=$('statsUpdatedAt');if(updated)updated.textContent='อัปเดตล่าสุด: '+new Date().toLocaleString('th-TH');
-  const empNote=$('chartByEmployeeNote');if(empNote)empNote.textContent='นับตามขอบเขต: '+scopeText+' · เรียงจากมากไปน้อย · แสดงเฉพาะพนักงานที่มีวันลาในขอบเขตนี้';
+  const empNote=$('chartByEmployeeNote');if(empNote)empNote.textContent='นับตามขอบเขต: '+scopeText+' · เรียงจากมากไปน้อย · แต่ละสี = ประเภทการลา (ดูคีย์สีด้านล่าง)';
 
   const emptyState=$('statsEmptyState'),chartsSec=$('statsChartsSection');
   if(!rows.length){
@@ -1165,11 +1180,15 @@ function renderStatsCharts(){
   const empMap=new Map();
   scoped.forEach(r=>{
     const name=r.empName||'ไม่ระบุชื่อ';
-    const entry=empMap.get(name)||{name,days:0,count:0};
+    const t=r.leaveType||'ไม่ระบุประเภท';
+    const entry=empMap.get(name)||{name,days:0,count:0,types:{}};
     entry.days+=r.statsDays;entry.count+=1;
+    entry.types[t]=(entry.types[t]||0)+r.statsDays;
     empMap.set(name,entry);
   });
   const empTotals=[...empMap.values()].sort((a,b)=>b.days-a.days||b.count-a.count||a.name.localeCompare(b.name,'th'));
+  const empTypes=[...new Set(empTotals.flatMap(e=>Object.keys(e.types)))];
+  const empTypeColors=leaveTypeColorMap(empTypes);
   const statusLabels=STATS_BUCKETS.map(b=>b.label);
   const statusValues=STATS_BUCKETS.map(b=>counts[b.key]||0);
   const statusColors=STATS_BUCKETS.map(b=>b.color);
@@ -1182,36 +1201,39 @@ function renderStatsCharts(){
   if(empCtx&&empTotals.length){
     const isNarrow=window.innerWidth<=640;
     const empFontSize=isNarrow?11:12;
-    const rowH=isNarrow?30:34;
+    const rowH=isNarrow?34:38;
     const wrapEl=$('chartByEmployeeWrap');
-    if(wrapEl)wrapEl.style.height=Math.max(isNarrow?220:260,empTotals.length*rowH+100)+'px';
+    if(wrapEl)wrapEl.style.height=Math.max(isNarrow?240:280,empTotals.length*rowH+130)+'px';
     statsCharts.byEmployee=new Chart(empCtx,{
       type:'bar',
-      data:{labels:empTotals.map(e=>e.name),datasets:[{
-        label:'จำนวนวันลา',
-        data:empTotals.map(e=>e.days),
-        backgroundColor:'#2563eb',
-        borderRadius:4
-      }]},
+      data:{labels:empTotals.map(e=>e.name),datasets:empTypes.map(t=>({
+        label:t,
+        data:empTotals.map(e=>e.types[t]||0),
+        backgroundColor:empTypeColors[t],
+        stack:'s',
+        borderRadius:3,
+        borderSkipped:false
+      }))},
       options:Object.assign({},baseOpts,{
         indexAxis:'y',
-        categoryPercentage:0.85,
-        barPercentage:0.6,
+        categoryPercentage:0.9,
+        barPercentage:0.55,
         layout:{padding:{top:26,left:2,right:6,bottom:0}},
         plugins:{
-          legend:{display:false},
-          tooltip:{callbacks:{
+          legend:{position:'bottom',labels:{font:{family:'Prompt',size:isNarrow?10:11},boxWidth:isNarrow?10:12,padding:isNarrow?8:12,usePointStyle:true,pointStyle:'rectRounded'}},
+          tooltip:{mode:'index',callbacks:{
             title:items=>String(items[0].label),
-            label:c=>{
-              const e=empTotals[c.dataIndex];
-              return [`วันลา: ${e.days} วัน`,`จำนวนคำขอ: ${e.count} ใบ`];
+            label:c=>`${c.dataset.label}: ${c.parsed.x} วัน`,
+            footer:items=>{
+              const e=empTotals[items[0].dataIndex];
+              return `รวม: ${e.days} วัน · ${e.count} ใบ`;
             }
           }},
           statsEmployeeNames:{enabled:true,fontSize:empFontSize}
         },
         scales:{
-          x:{beginAtZero:true,ticks:{precision:0,font:{family:'Prompt',size:isNarrow?10:11}}},
-          y:{ticks:{display:false},grid:{display:false}}
+          x:{beginAtZero:true,stacked:true,ticks:{precision:0,font:{family:'Prompt',size:isNarrow?10:11}}},
+          y:{stacked:true,ticks:{display:false},grid:{display:false}}
         }
       }),
       plugins:[statsEmployeeNamePlugin]
