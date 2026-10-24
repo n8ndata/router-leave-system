@@ -298,14 +298,20 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                           </form>
                                                         </section>
                                                         <section id="adminPanel" class="hidden mb-6 rounded-xl border border-teal-200 bg-teal-50 p-4">
-                                          <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                                          <div class="flex flex-wrap justify-between items-center gap-2">
                                             <h3 class="font-bold text-teal-900">🔐 ระบบหลังบ้าน — รหัสผ่านพนักงาน</h3>
-                                            <button type="button" id="btnRefreshPasswords" class="px-3 py-2 bg-white border border-teal-300 rounded-lg text-sm">
-                                              <i class="fa fa-rotate mr-1"></i> รีเฟรช</button>
+                                            <button type="button" id="btnTogglePasswordPanel" class="px-3 py-2 bg-white border border-teal-300 rounded-lg text-sm" aria-expanded="false" aria-controls="passwordPanelBody">
+                                              <i id="passwordPanelToggleIcon" class="fa fa-chevron-down mr-1"></i><span id="passwordPanelToggleLabel">แสดงข้อมูล</span></button>
                                           </div>
-                                          <p class="text-sm text-teal-800 mb-3">แสดงบัญชีผู้ใช้และรหัสผ่านที่ตั้งไว้ของพนักงานทุกคน (เฉพาะโหมดผู้ดูแล)</p>
-                                          <div id="passwordTableBody" class="max-h-64 overflow-y-auto space-y-2 text-sm">
-                                            <p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>
+                                          <div id="passwordPanelBody" class="hidden mt-3">
+                                            <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                                              <p class="text-sm text-teal-800">แสดงบัญชีผู้ใช้และรหัสผ่านที่ตั้งไว้ของพนักงานทุกคน (เฉพาะโหมดผู้ดูแล)</p>
+                                              <button type="button" id="btnRefreshPasswords" class="px-3 py-2 bg-white border border-teal-300 rounded-lg text-sm">
+                                                <i class="fa fa-rotate mr-1"></i> รีเฟรช</button>
+                                            </div>
+                                            <div id="passwordTableBody" class="max-h-64 overflow-y-auto space-y-2 text-sm">
+                                              <p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>
+                                            </div>
                                           </div>
                                         </section>
                                         <section id="managerDashboard" class="mb-6 space-y-4">
@@ -433,7 +439,13 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                   </div>
                                                   </div>
                                                   <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
-                                                  <h3 class="font-bold mb-3">🔎 ตัวกรองข้อมูล</h3>
+                                                  <div class="flex flex-wrap justify-between items-center gap-2">
+                                                  <h3 class="font-bold">🔎 ตัวกรองข้อมูล</h3>
+                                                  <button type="button" id="btnToggleStatsFilters" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium" aria-expanded="false" aria-controls="statsFilterBody">
+                                                  <i id="statsFilterToggleIcon" class="fa fa-chevron-down mr-1"></i><span id="statsFilterToggleLabel">แสดงตัวกรอง</span></button>
+                                                  </div>
+                                                  <p id="statsFilterSummary" class="text-xs text-gray-500 mt-2"></p>
+                                                  <div id="statsFilterBody" class="hidden mt-3">
                                                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                                   <div>
                                                   <label for="statsMonthFrom" class="block text-sm font-medium mb-1">เดือนเริ่ม</label>
@@ -472,7 +484,7 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                   <i class="fa fa-download mr-1"></i> ดาวน์โหลดสถิติ (CSV)</button>
                                                   <span id="statsUpdatedAt" class="text-xs text-gray-500 self-center ml-auto"></span>
                                                   </div>
-                                                  <p id="statsFilterSummary" class="text-xs text-gray-500 mt-3"></p>
+                                                  </div>
                                                   </div>
                                                   <h3 class="font-bold mb-3">📈 สรุปสถานะคำขอ (ตามตัวกรอง)</h3>
                                                   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -638,13 +650,27 @@ async function verifyAdminGate(){
     $('adminPanel').classList.remove('hidden');
     showPage('managerPage');
     showToast('เข้าสู่ระบบผู้ดูแลเรียบร้อย');
-    loadPasswordTable();
+    setPasswordPanelVisibility(false);
     subscribeToLeaveData();
     subscribeToActivityLog();
   }catch(err){ console.error(err); showToast('ตรวจสอบรหัสผ่านไม่สำเร็จ: '+(err.message||err.code),true); }
 }
 let usersListener=null;
 function stopUsersListener(){ if(usersListener){ db.ref('users').off('value',usersListener); usersListener=null; } }
+function setPasswordPanelVisibility(show){
+  const body=$('passwordPanelBody'),btn=$('btnTogglePasswordPanel'),label=$('passwordPanelToggleLabel'),icon=$('passwordPanelToggleIcon');
+  if(!body)return;
+  body.classList.toggle('hidden',!show);
+  if(btn)btn.setAttribute('aria-expanded',show?'true':'false');
+  if(label)label.textContent=show?'ซ่อนข้อมูล':'แสดงข้อมูล';
+  if(icon)icon.className=show?'fa fa-chevron-up mr-1':'fa fa-chevron-down mr-1';
+  if(show)loadPasswordTable(); else stopUsersListener();
+}
+function togglePasswordPanel(){
+  const body=$('passwordPanelBody');
+  if(!body)return;
+  setPasswordPanelVisibility(body.classList.contains('hidden'));
+}
 function renderPasswordTable(data){
   const body=$('passwordTableBody'); if(!body) return;
   const rows=Object.values(data||{}).filter(Boolean).map(u=>({
@@ -1235,9 +1261,23 @@ const statsEmployeeNamePlugin={
     ctx.restore();
   }
 };
+function setStatsFilterVisibility(show){
+  const body=$('statsFilterBody'),btn=$('btnToggleStatsFilters'),label=$('statsFilterToggleLabel'),icon=$('statsFilterToggleIcon');
+  if(!body)return;
+  body.classList.toggle('hidden',!show);
+  if(btn)btn.setAttribute('aria-expanded',show?'true':'false');
+  if(label)label.textContent=show?'ซ่อนตัวกรอง':'แสดงตัวกรอง';
+  if(icon)icon.className=show?'fa fa-chevron-up mr-1':'fa fa-chevron-down mr-1';
+}
+function toggleStatsFilters(){
+  const body=$('statsFilterBody');
+  if(!body)return;
+  setStatsFilterVisibility(body.classList.contains('hidden'));
+}
 function openStatsPage(){
   if(!managerMode){showToast('เฉพาะโหมดหัวหน้างานเท่านั้น',true);return;}
   showPage('statsPage');
+  setStatsFilterVisibility(false);
   buildStatsFilterOptions();
   renderStatsCharts();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1473,7 +1513,7 @@ function downloadAllRecords(){if(!leaveRequests.length){showToast('ไม่ม�
 async function handleSubmit(e){e.preventDefault();if(!$('submitBtn').disabled){}const empName=$('empName').value,leaveType=$('leaveType').value,startDate=$('startDate').value,endDate=$('endDate').value,reason=$('reason').value.trim();if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลให้ครบถ้วน',true);return;}if(!calculateDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}if(!EMPLOYEE_LIST.includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}if(findDuplicateRequest(empName,startDate,endDate).length){showToast('คุณมีคำขอในช่วงวันนี้อยู่แล้ว กรุณาตรวจสอบรายการของคุณ',true);return;}const own=findOwnOverlaps(empName,startDate,endDate);if(own.length){showToast(`ช่วงวันที่ลาทับซ้อนกับคำขอเดิมของคุณ (${own[0].startDate} ถึง ${own[0].endDate})`,true);return;}const conflicts=checkLeaveAvailability(startDate,endDate);if(conflicts.length){showToast(`วันที่ ${conflicts[0]} มีผู้ลาเต็มโควตาแล้ว (2 คน/วัน)`,true);return;}const btn=$('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';try{const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('leaveDays').value),reason,status:STATUS.PENDING,submittedAt:new Date().toLocaleString('th-TH'),submittedAtISO:new Date().toISOString()};const reqRef=db.ref('leaveRequests').push(newRequest);logActivity(empName,'submit',`${leaveType} · ${startDate} ถึง ${endDate} (${$('leaveDays').value} วัน) · เหตุผล: ${reason}`,'พนักงาน',reqRef.key);notifyLeave('new-request',newRequest);currentUser=empName;showToast('ส่งคำขอลาสำเร็จ');$('leaveType').value='';$('startDate').value='';$('endDate').value='';$('leaveDays').value='';$('reason').value='';$('empName').value=empName;renderEmployeeRequests();}catch(err){console.error(err);showToast('บันทึกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';}}
 async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action,req=leaveRequests.find(r=>r.id===id);if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(!managerMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
 if(action==='approve')notifyLeave('approved',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});else if(action==='reject')notifyLeave('rejected',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});showToast(message);}catch(err){console.error(err);showToast('อัปเดตไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
-document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();bootstrapDefaultUsers().catch(()=>{});if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',toggleAdminLogin);if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('btnOpenStats'))$('btnOpenStats').addEventListener('click',openStatsPage);if($('btnCloseStats'))$('btnCloseStats').addEventListener('click',closeStatsPage);if($('statsMonthFrom'))$('statsMonthFrom').addEventListener('change',renderStatsCharts);if($('statsMonthTo'))$('statsMonthTo').addEventListener('change',renderStatsCharts);if($('statsEmpFilter'))$('statsEmpFilter').addEventListener('change',renderStatsCharts);if($('statsTypeFilter'))$('statsTypeFilter').addEventListener('change',renderStatsCharts);if($('statsScope'))$('statsScope').addEventListener('change',renderStatsCharts);if($('statsWorkdayOnly'))$('statsWorkdayOnly').addEventListener('change',renderStatsCharts);if($('btnStatsRefresh'))$('btnStatsRefresh').addEventListener('click',()=>{renderStatsCharts();showToast('รีเฟรชข้อมูลสถิติแล้ว');});if($('btnStatsReset'))$('btnStatsReset').addEventListener('click',resetStatsFilters);if($('btnStatsDownload'))$('btnStatsDownload').addEventListener('click',downloadStatsCSV);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const delBtn=e.target.closest('button[data-action]');if(delBtn){handleManagerAction(delBtn);return;}const item=e.target.closest('.selectable-item');if(item){const wasSelected=item.classList.contains('is-selected');document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));if(!wasSelected)item.classList.add('is-selected');return;}document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));});});
+document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();bootstrapDefaultUsers().catch(()=>{});if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',toggleAdminLogin);if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);if($('btnTogglePasswordPanel')) $('btnTogglePasswordPanel').addEventListener('click',togglePasswordPanel);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('btnOpenStats'))$('btnOpenStats').addEventListener('click',openStatsPage);if($('btnCloseStats'))$('btnCloseStats').addEventListener('click',closeStatsPage);if($('btnToggleStatsFilters'))$('btnToggleStatsFilters').addEventListener('click',toggleStatsFilters);if($('statsMonthFrom'))$('statsMonthFrom').addEventListener('change',renderStatsCharts);if($('statsMonthTo'))$('statsMonthTo').addEventListener('change',renderStatsCharts);if($('statsEmpFilter'))$('statsEmpFilter').addEventListener('change',renderStatsCharts);if($('statsTypeFilter'))$('statsTypeFilter').addEventListener('change',renderStatsCharts);if($('statsScope'))$('statsScope').addEventListener('change',renderStatsCharts);if($('statsWorkdayOnly'))$('statsWorkdayOnly').addEventListener('change',renderStatsCharts);if($('btnStatsRefresh'))$('btnStatsRefresh').addEventListener('click',()=>{renderStatsCharts();showToast('รีเฟรชข้อมูลสถิติแล้ว');});if($('btnStatsReset'))$('btnStatsReset').addEventListener('click',resetStatsFilters);if($('btnStatsDownload'))$('btnStatsDownload').addEventListener('click',downloadStatsCSV);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const delBtn=e.target.closest('button[data-action]');if(delBtn){handleManagerAction(delBtn);return;}const item=e.target.closest('.selectable-item');if(item){const wasSelected=item.classList.contains('is-selected');document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));if(!wasSelected)item.classList.add('is-selected');return;}document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));});});
 let statsResizeTimer=null;
 window.addEventListener('resize',()=>{const page=$('statsPage');if(!page||page.classList.contains('hidden'))return;clearTimeout(statsResizeTimer);statsResizeTimer=setTimeout(()=>{renderStatsCharts();},250);});
 </script>
