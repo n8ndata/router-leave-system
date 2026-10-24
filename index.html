@@ -298,18 +298,39 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                                           </form>
                                                         </section>
                                                         <section id="adminPanel" class="hidden mb-6 rounded-xl border border-teal-200 bg-teal-50 p-4">
-                                          <div class="flex flex-wrap justify-between items-center gap-2">
-                                            <h3 class="font-bold text-teal-900">🔐 ระบบหลังบ้าน — รหัสผ่านพนักงาน</h3>
-                                            <button type="button" id="btnTogglePasswordPanel" class="px-3 py-2 bg-white border border-teal-300 rounded-lg text-sm" aria-expanded="false" aria-controls="passwordPanelBody">
-                                              <i id="passwordPanelToggleIcon" class="fa fa-chevron-down mr-1"></i><span id="passwordPanelToggleLabel">แสดงข้อมูล</span></button>
+                                          <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                                            <h3 class="font-bold text-teal-900">🔐 ระบบหลังบ้าน — จัดการพนักงาน &amp; รหัสผ่าน</h3>
+                                            <div class="flex gap-2">
+                                              <button type="button" id="btnShowAddEmployee" class="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm">
+                                                <i class="fa fa-user-plus mr-1"></i> เพิ่มพนักงาน</button>
+                                              <button type="button" id="btnTogglePasswordPanel" class="px-3 py-2 bg-white border border-teal-300 rounded-lg text-sm" aria-expanded="false" aria-controls="passwordPanelBody">
+                                                <i id="passwordPanelToggleIcon" class="fa fa-chevron-down mr-1"></i><span id="passwordPanelToggleLabel">แสดงข้อมูล</span></button>
+                                            </div>
+                                          </div>
+                                          <div id="addEmployeePanel" class="hidden mb-3 p-3 bg-white border border-teal-200 rounded-lg">
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                                              <input id="newEmpName" class="px-3 py-2 border rounded-lg" placeholder="ชื่อ-นามสกุลพนักงาน">
+                                              <input id="newEmpUsername" class="px-3 py-2 border rounded-lg" placeholder="ชื่อผู้ใช้งาน (ไม่บังคับ)">
+                                              <input id="newEmpPassword" type="password" class="px-3 py-2 border rounded-lg" placeholder="รหัสผ่านเริ่มต้น">
+                                              <select id="newEmpRole" class="px-3 py-2 border rounded-lg">
+                                                <option value="user">พนักงาน (user)</option>
+                                                <option value="approver">หัวหน้างาน/ผู้อนุมัติ (approver)</option>
+                                                <option value="manager">ผู้จัดการ (manager)</option>
+                                                <option value="admin">ผู้ดูแลระบบ (admin)</option>
+                                              </select>
+                                            </div>
+                                            <div class="flex gap-2">
+                                              <button type="button" id="btnAddEmployee" class="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm"><i class="fa fa-save mr-1"></i> บันทึก</button>
+                                              <button type="button" id="btnCancelAddEmployee" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">ยกเลิก</button>
+                                            </div>
                                           </div>
                                           <div id="passwordPanelBody" class="hidden mt-3">
                                             <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-                                              <p class="text-sm text-teal-800">แสดงบัญชีผู้ใช้และรหัสผ่านที่ตั้งไว้ของพนักงานทุกคน (เฉพาะโหมดผู้ดูแล)</p>
+                                              <p class="text-sm text-teal-800">จัดการบัญชีผู้ใช้พนักงาน เพิ่ม/แก้ไข/ลบ และดูรหัสผ่าน (เฉพาะโหมดผู้ดูแล)</p>
                                               <button type="button" id="btnRefreshPasswords" class="px-3 py-2 bg-white border border-teal-300 rounded-lg text-sm">
                                                 <i class="fa fa-rotate mr-1"></i> รีเฟรช</button>
                                             </div>
-                                            <div id="passwordTableBody" class="max-h-64 overflow-y-auto space-y-2 text-sm">
+                                            <div id="passwordTableBody" class="max-h-80 overflow-y-auto space-y-2 text-sm">
                                               <p class="text-gray-500 text-center py-2">กำลังโหลดข้อมูล...</p>
                                             </div>
                                           </div>
@@ -673,15 +694,19 @@ function togglePasswordPanel(){
 }
 function renderPasswordTable(data){
   const body=$('passwordTableBody'); if(!body) return;
-  const rows=Object.values(data||{}).filter(Boolean).map(u=>({
+  const entries=Object.entries(data||{}).filter(([,v])=>v&&typeof v==='object');
+  const rows=entries.map(([key,u])=>({
+    key,
     name: u.displayName||u.empName||'-',
+    empName: u.empName||u.displayName||'-',
     username: u.username||'-',
     password: u.plainPassword!=null?u.plainPassword:'(เปลี่ยนแล้ว)',
     role: u.role||'user',
-    updatedAt: u.passwordUpdatedAt||''
+    updatedAt: u.passwordUpdatedAt||'',
+    raw: u
   })).sort((a,b)=>a.name.localeCompare(b.name,'th'));
   if(!rows.length){ body.innerHTML='<p class="text-gray-500 text-center py-2">ยังไม่มีบัญชีผู้ใช้</p>'; return; }
-  body.innerHTML=rows.map(r=>`<div class="p-2 rounded bg-white border border-gray-200"><div class="flex flex-wrap justify-between items-center gap-2 mb-1"><span class="font-semibold">👤 ${escapeHTML(r.name)}</span><span class="text-xs font-bold text-teal-700">${escapeHTML(r.role)}</span></div><div class="space-y-1 pl-2"><div class="text-xs flex flex-wrap justify-between gap-1"><span>🔑 Username: <span class="font-mono">${escapeHTML(r.username)}</span></span><span>รหัสผ่าน: <span class="font-mono font-semibold">${escapeHTML(r.password)}</span></span></div>${r.updatedAt?`<div class="text-xs text-gray-500">อัปเดต: ${escapeHTML(new Date(r.updatedAt).toLocaleString('th-TH'))}</div>`:''}</div></div>`).join('');
+  body.innerHTML=rows.map(r=>`<div class="p-2 rounded bg-white border border-gray-200"><div class="flex flex-wrap justify-between items-center gap-2 mb-1"><span class="font-semibold">👤 ${escapeHTML(r.name)}</span><div class="flex items-center gap-2"><span class="text-xs font-bold text-teal-700">${escapeHTML(r.role)}</span><button type="button" data-action="edit-user" data-key="${escapeHTML(r.key)}" class="px-2 py-1 text-xs bg-white border border-gray-300 rounded">แก้ไข</button><button type="button" data-action="delete-user" data-key="${escapeHTML(r.key)}" data-name="${escapeHTML(r.name)}" class="px-2 py-1 text-xs bg-red-50 text-red-700 border border-red-200 rounded">ลบ</button></div></div><div class="space-y-1 pl-2"><div class="text-xs flex flex-wrap justify-between gap-1"><span>🔑 Username: <span class="font-mono">${escapeHTML(r.username)}</span></span><span>รหัสผ่าน: <span class="font-mono font-semibold">${escapeHTML(r.password)}</span></span></div>${r.updatedAt?`<div class="text-xs text-gray-500">อัปเดต: ${escapeHTML(new Date(r.updatedAt).toLocaleString('th-TH'))}</div>`:''}</div></div>`).join('');
 }
 function loadPasswordTable(){
   const body=$('passwordTableBody'); if(!body) return;
@@ -689,7 +714,91 @@ function loadPasswordTable(){
   stopUsersListener();
   usersListener=db.ref('users').on('value',snap=>{
     renderPasswordTable(snap.val()||{});
+    updateEmployeeListFromUsers(snap.val()||{});
   },err=>{ console.error(err); body.innerHTML='<p class="text-red-500 text-center py-2">โหลดข้อมูลไม่สำเร็จ</p>'; });
+}
+
+let DYNAMIC_EMPLOYEE_LIST = [...EMPLOYEE_LIST];
+function getEmployeeList(){ return DYNAMIC_EMPLOYEE_LIST.length? DYNAMIC_EMPLOYEE_LIST : EMPLOYEE_LIST; }
+function updateEmployeeListFromUsers(users){
+  const set = new Set([...EMPLOYEE_LIST]);
+  Object.values(users||{}).forEach(u=>{
+    const name = u?.empName || u?.displayName || u?.username;
+    if(name && String(name).trim()) set.add(String(name).trim());
+  });
+  DYNAMIC_EMPLOYEE_LIST = Array.from(set).sort((a,b)=>a.localeCompare(b,'th'));
+  initEmployeeOptions();
+}
+
+async function addEmployee(){
+  const nameEl=$('newEmpName'), userEl=$('newEmpUsername'), passEl=$('newEmpPassword'), roleEl=$('newEmpRole');
+  const name = nameEl?.value?.trim()||'';
+  const username = (userEl?.value?.trim()||name)||'';
+  const password = passEl?.value||'';
+  const role = roleEl?.value||'user';
+  if(!name){ showToast('กรุณากรอกชื่อ-นามสกุลพนักงาน',true); return; }
+  if(!password){ showToast('กรุณากรอกรหัสผ่านเริ่มต้น',true); return; }
+  try{
+    await ensureUser(username, password, name, role);
+    if(nameEl) nameEl.value='';
+    if(userEl) userEl.value='';
+    if(passEl) passEl.value='';
+    if(roleEl) roleEl.value='user';
+    $('addEmployeePanel')?.classList.add('hidden');
+    showToast('เพิ่มพนักงานเรียบร้อย และอัปเดตใน Firebase แล้ว');
+    loadPasswordTable();
+  }catch(e){
+    console.error(e);
+    showToast('เพิ่มพนักงานไม่สำเร็จ: '+(e.message||e.code),true);
+  }
+}
+
+function toggleAddEmployeePanel(){
+  const panel=$('addEmployeePanel');
+  if(!panel) return;
+  panel.classList.toggle('hidden');
+}
+
+async function editEmployeeUser(key, current){
+  if(!managerMode && !adminMode){ showToast('ไม่มีสิทธิ์',true); return; }
+  const newName = prompt('แก้ไขชื่อ-นามสกุล', current.empName || current.displayName || current.username || '');
+  if(newName===null) return;
+  const newUsername = prompt('แก้ไขชื่อผู้ใช้งาน', current.username || newName || '');
+  if(newUsername===null) return;
+  const newRole = prompt('แก้ไขสิทธิ์ (user/approver/manager/admin)', current.role || 'user');
+  if(newRole===null) return;
+  const newPass = prompt('ตั้งรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)', '');
+  if(newPass===null) return;
+  try{
+    const updates={ empName:newName.trim(), username:(newUsername.trim()||newName.trim()), displayName:newName.trim(), role:newRole.trim() };
+    if(newPass && newPass.trim()){
+      const salt=crypto.getRandomValues(new Uint8Array(16));
+      const hash=await hashUserPassword(newPass.trim(), salt);
+      updates.salt=bytesToBase64(salt);
+      updates.hash=hash;
+      updates.plainPassword=newPass.trim();
+      updates.passwordUpdatedAt=new Date().toISOString();
+    }
+    await db.ref('users/'+key).update(updates);
+    showToast('แก้ไขข้อมูลพนักงานเรียบร้อย');
+    loadPasswordTable();
+  }catch(e){
+    console.error(e);
+    showToast('แก้ไขไม่สำเร็จ: '+(e.message||e.code),true);
+  }
+}
+
+async function deleteEmployeeUser(key, name){
+  if(!managerMode && !adminMode){ showToast('ไม่มีสิทธิ์',true); return; }
+  if(!confirm(`ยืนยันลบผู้ใช้ ${name} ออกจากระบบหลังบ้านหรือไม่?\nการกระทำนี้ไม่สามารถกู้คืนได้`)) return;
+  try{
+    await db.ref('users/'+key).remove();
+    showToast('ลบผู้ใช้งานเรียบร้อย');
+    loadPasswordTable();
+  }catch(e){
+    console.error(e);
+    showToast('ลบไม่สำเร็จ: '+(e.message||e.code),true);
+  }
 }
 async function changeOwnPassword(){
   if(!currentUser||typeof currentUser!=='string'){ showToast('กรุณาเข้าสู่ระบบก่อน',true); return; }
@@ -937,17 +1046,18 @@ function renderConnStatus(){
 function checkConnection(){connectionListener=snap=>{connCloud=snap.val()===true;renderConnStatus();};db.ref('.info/connected').on('value',connectionListener, error=>{console.warn(error);});window.addEventListener('online',renderConnStatus);window.addEventListener('offline',renderConnStatus);renderConnStatus();}
 function initEmployeeOptions(){
   const select=$('empName'),managerSelect=$('managerEmpName'),loginSelect=$('loginUsername');
+  const list=getEmployeeList();
   if(select) select.innerHTML='<option value="">-- กรุณาเลือกชื่อ-นามสกุล --</option>';
   if(managerSelect) managerSelect.innerHTML='<option value="">-- เลือกพนักงาน --</option>';
-  EMPLOYEE_LIST.forEach(name=>{
+  list.forEach(name=>{
     if(select){const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.appendChild(opt);}
     if(managerSelect){const managerOpt=document.createElement('option');managerOpt.value=name;managerOpt.textContent=name;managerSelect.appendChild(managerOpt);}
   });
-  if(select){select.addEventListener('change',()=>{currentUser=select.value||null;renderEmployeeRequests();});}
-  // Login dropdown: every employee (approver excluded — approver uses the Admin button)
+  if(select){select.onchange=null;select.addEventListener('change',()=>{currentUser=select.value||null;renderEmployeeRequests();});}
+  // Login dropdown: every employee
   if(loginSelect){
     loginSelect.innerHTML='<option value="">-- กรุณาเลือกชื่อพนักงาน --</option>';
-    EMPLOYEE_LIST.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;loginSelect.appendChild(opt);});
+    list.forEach(name=>{const opt=document.createElement('option');opt.value=name;opt.textContent=name;loginSelect.appendChild(opt);});
   }
   if($('btnAdminLogin')) $('btnAdminLogin').textContent=ADMIN_BUTTON_LABEL;
 }
@@ -1511,9 +1621,72 @@ async function handleManagerLeaveSubmit(e){
 
 function downloadAllRecords(){if(!leaveRequests.length){showToast('ไม่มีข้อมูลสำหรับดาวน์โหลด',true);return;}const headers=['ชื่อ','ประเภท','วันที่เริ่ม','วันที่สิ้นสุด','จำนวนวัน','เหตุผล','สถานะ','วันที่ส่ง'];const rows=leaveRequests.map(r=>[r.empName,r.leaveType,r.startDate,r.endDate,r.leaveDays,r.reason,r.status,r.submittedAt]);const csv='\uFEFF'+[headers,...rows].map(row=>row.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`รายงานการลา_${dateKey(new Date())}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('สร้างรายงาน CSV แล้ว');}
 async function handleSubmit(e){e.preventDefault();if(!$('submitBtn').disabled){}const empName=$('empName').value,leaveType=$('leaveType').value,startDate=$('startDate').value,endDate=$('endDate').value,reason=$('reason').value.trim();if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลให้ครบถ้วน',true);return;}if(!calculateDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}if(!EMPLOYEE_LIST.includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}if(findDuplicateRequest(empName,startDate,endDate).length){showToast('คุณมีคำขอในช่วงวันนี้อยู่แล้ว กรุณาตรวจสอบรายการของคุณ',true);return;}const own=findOwnOverlaps(empName,startDate,endDate);if(own.length){showToast(`ช่วงวันที่ลาทับซ้อนกับคำขอเดิมของคุณ (${own[0].startDate} ถึง ${own[0].endDate})`,true);return;}const conflicts=checkLeaveAvailability(startDate,endDate);if(conflicts.length){showToast(`วันที่ ${conflicts[0]} มีผู้ลาเต็มโควตาแล้ว (2 คน/วัน)`,true);return;}const btn=$('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';try{const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('leaveDays').value),reason,status:STATUS.PENDING,submittedAt:new Date().toLocaleString('th-TH'),submittedAtISO:new Date().toISOString()};const reqRef=db.ref('leaveRequests').push(newRequest);logActivity(empName,'submit',`${leaveType} · ${startDate} ถึง ${endDate} (${$('leaveDays').value} วัน) · เหตุผล: ${reason}`,'พนักงาน',reqRef.key);notifyLeave('new-request',newRequest);currentUser=empName;showToast('ส่งคำขอลาสำเร็จ');$('leaveType').value='';$('startDate').value='';$('endDate').value='';$('leaveDays').value='';$('reason').value='';$('empName').value=empName;renderEmployeeRequests();}catch(err){console.error(err);showToast('บันทึกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';}}
-async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action,req=leaveRequests.find(r=>r.id===id);if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(!managerMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
+async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action;if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(action==='edit-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}btn.disabled=true;try{const snap=await db.ref('users/'+key).once('value');const data=snap.val()||{};await editEmployeeUser(key,data);}catch(e){console.error(e);showToast('แก้ไขไม่สำเร็จ: '+(e.message||e.code),true);}finally{btn.disabled=false;}return;}if(action==='delete-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;const name=btn.dataset.name||'';if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}await deleteEmployeeUser(key,name);return;}const req=leaveRequests.find(r=>r.id===id);if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
 if(action==='approve')notifyLeave('approved',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});else if(action==='reject')notifyLeave('rejected',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});showToast(message);}catch(err){console.error(err);showToast('อัปเดตไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
-document.addEventListener('DOMContentLoaded',async()=>{checkConnection();initEmployeeOptions();bootstrapDefaultUsers().catch(()=>{});if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);if($('empLogout')) $('empLogout').addEventListener('click',logout);if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',toggleAdminLogin);if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);if($('btnTogglePasswordPanel')) $('btnTogglePasswordPanel').addEventListener('click',togglePasswordPanel);$('startDate').addEventListener('change',calculateDays);$('endDate').addEventListener('change',calculateDays);$('leaveForm').addEventListener('submit',handleSubmit);$('btnClearLeaveForm').addEventListener('click',clearEmployeeForm);$('managerLeaveForm').addEventListener('submit',handleManagerLeaveSubmit);$('btnShowManagerLeaveForm').addEventListener('click',openManagerLeaveForm);$('btnCloseManagerLeaveForm').addEventListener('click',closeManagerLeaveForm);$('managerStartDate').addEventListener('change',calculateManagerLeaveDays);$('managerEndDate').addEventListener('change',calculateManagerLeaveDays);$('btnClearManagerLeaveForm').addEventListener('click',clearManagerLeaveForm);$('btnDownload').addEventListener('click',downloadAllRecords);if($('btnOpenStats'))$('btnOpenStats').addEventListener('click',openStatsPage);if($('btnCloseStats'))$('btnCloseStats').addEventListener('click',closeStatsPage);if($('btnToggleStatsFilters'))$('btnToggleStatsFilters').addEventListener('click',toggleStatsFilters);if($('statsMonthFrom'))$('statsMonthFrom').addEventListener('change',renderStatsCharts);if($('statsMonthTo'))$('statsMonthTo').addEventListener('change',renderStatsCharts);if($('statsEmpFilter'))$('statsEmpFilter').addEventListener('change',renderStatsCharts);if($('statsTypeFilter'))$('statsTypeFilter').addEventListener('change',renderStatsCharts);if($('statsScope'))$('statsScope').addEventListener('change',renderStatsCharts);if($('statsWorkdayOnly'))$('statsWorkdayOnly').addEventListener('change',renderStatsCharts);if($('btnStatsRefresh'))$('btnStatsRefresh').addEventListener('click',()=>{renderStatsCharts();showToast('รีเฟรชข้อมูลสถิติแล้ว');});if($('btnStatsReset'))$('btnStatsReset').addEventListener('click',resetStatsFilters);if($('btnStatsDownload'))$('btnStatsDownload').addEventListener('click',downloadStatsCSV);if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);document.addEventListener('click',e=>{const nav=e.target.closest('button[data-month-nav]');if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}const day=e.target.closest('button[data-calendar-date]');if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}const delBtn=e.target.closest('button[data-action]');if(delBtn){handleManagerAction(delBtn);return;}const item=e.target.closest('.selectable-item');if(item){const wasSelected=item.classList.contains('is-selected');document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));if(!wasSelected)item.classList.add('is-selected');return;}document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));});});
+document.addEventListener('DOMContentLoaded',async()=>{
+  checkConnection();
+  initEmployeeOptions();
+  bootstrapDefaultUsers().catch(()=>{});
+  try{ db.ref('users').once('value').then(s=>updateEmployeeListFromUsers(s.val()||{})); }catch(e){}
+  if($('loginForm')) $('loginForm').addEventListener('submit',handleLogin);
+  if($('empLogout')) $('empLogout').addEventListener('click',logout);
+  if($('mgrLogout')) $('mgrLogout').addEventListener('click',logout);
+  if($('btnChangePassword')) $('btnChangePassword').addEventListener('click',changeOwnPassword);
+  if($('btnAdminLogin')) $('btnAdminLogin').addEventListener('click',toggleAdminLogin);
+  if($('btnAdminCancel')) $('btnAdminCancel').addEventListener('click',hideAdminLogin);
+  if($('btnAdminVerify')) $('btnAdminVerify').addEventListener('click',verifyAdminGate);
+  if($('adminLoginForm')) $('adminLoginForm').addEventListener('submit',e=>{e.preventDefault();verifyAdminGate();});
+  if($('btnRefreshPasswords')) $('btnRefreshPasswords').addEventListener('click',loadPasswordTable);
+  if($('btnTogglePasswordPanel')) $('btnTogglePasswordPanel').addEventListener('click',togglePasswordPanel);
+  if($('btnShowAddEmployee')) $('btnShowAddEmployee').addEventListener('click',toggleAddEmployeePanel);
+  if($('btnCancelAddEmployee')) $('btnCancelAddEmployee').addEventListener('click',()=>{$('addEmployeePanel')?.classList.add('hidden');});
+  if($('btnAddEmployee')) $('btnAddEmployee').addEventListener('click',addEmployee);
+  const pwBody2=$('passwordTableBody');
+  if(pwBody2){
+    pwBody2.addEventListener('click',e=>{
+      const btn=e.target.closest('button[data-action="edit-user"], button[data-action="delete-user"]');
+      if(!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      handleManagerAction(btn);
+    });
+  }
+  $('startDate')?.addEventListener('change',calculateDays);
+  $('endDate')?.addEventListener('change',calculateDays);
+  $('leaveForm')?.addEventListener('submit',handleSubmit);
+  $('btnClearLeaveForm')?.addEventListener('click',clearEmployeeForm);
+  $('managerLeaveForm')?.addEventListener('submit',handleManagerLeaveSubmit);
+  $('btnShowManagerLeaveForm')?.addEventListener('click',openManagerLeaveForm);
+  $('btnCloseManagerLeaveForm')?.addEventListener('click',closeManagerLeaveForm);
+  $('managerStartDate')?.addEventListener('change',calculateManagerLeaveDays);
+  $('managerEndDate')?.addEventListener('change',calculateManagerLeaveDays);
+  $('btnClearManagerLeaveForm')?.addEventListener('click',clearManagerLeaveForm);
+  $('btnDownload')?.addEventListener('click',downloadAllRecords);
+  if($('btnOpenStats'))$('btnOpenStats').addEventListener('click',openStatsPage);
+  if($('btnCloseStats'))$('btnCloseStats').addEventListener('click',closeStatsPage);
+  if($('btnToggleStatsFilters'))$('btnToggleStatsFilters').addEventListener('click',toggleStatsFilters);
+  if($('statsMonthFrom'))$('statsMonthFrom').addEventListener('change',renderStatsCharts);
+  if($('statsMonthTo'))$('statsMonthTo').addEventListener('change',renderStatsCharts);
+  if($('statsEmpFilter'))$('statsEmpFilter').addEventListener('change',renderStatsCharts);
+  if($('statsTypeFilter'))$('statsTypeFilter').addEventListener('change',renderStatsCharts);
+  if($('statsScope'))$('statsScope').addEventListener('change',renderStatsCharts);
+  if($('statsWorkdayOnly'))$('statsWorkdayOnly').addEventListener('change',renderStatsCharts);
+  if($('btnStatsRefresh'))$('btnStatsRefresh').addEventListener('click',()=>{renderStatsCharts();showToast('รีเฟรชข้อมูลสถิติแล้ว');});
+  if($('btnStatsReset'))$('btnStatsReset').addEventListener('click',resetStatsFilters);
+  if($('btnStatsDownload'))$('btnStatsDownload').addEventListener('click',downloadStatsCSV);
+  if($('activityFilter'))$('activityFilter').addEventListener('change',renderActivityLog);
+  document.addEventListener('click',e=>{
+    const nav=e.target.closest('button[data-month-nav]');
+    if(nav){const mode=nav.dataset.monthNav,step=Number(nav.dataset.step)||0;monthCursor[mode]=new Date(monthCursor[mode].getFullYear(),monthCursor[mode].getMonth()+step,1);renderMonthCalendar(mode==='employee'?'employeeMonthCalendar':'managerMonthCalendar',mode);return;}
+    const day=e.target.closest('button[data-calendar-date]');
+    if(day){showCalendarDate(day.dataset.calendarDate,day.dataset.calendarMode);return;}
+    const delBtn=e.target.closest('button[data-action]');
+    if(delBtn){handleManagerAction(delBtn);return;}
+    const item=e.target.closest('.selectable-item');
+    if(item){const wasSelected=item.classList.contains('is-selected');document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));if(!wasSelected)item.classList.add('is-selected');return;}
+    document.querySelectorAll('.selectable-item.is-selected').forEach(el=>el.classList.remove('is-selected'));
+  });
+});
 let statsResizeTimer=null;
 window.addEventListener('resize',()=>{const page=$('statsPage');if(!page||page.classList.contains('hidden'))return;clearTimeout(statsResizeTimer);statsResizeTimer=setTimeout(()=>{renderStatsCharts();},250);});
 </script>
