@@ -41,10 +41,107 @@
 :root{color-scheme:light;--router-900:#082f49;--router-800:#0c4a6e;--router-700:#075985;--router-600:#0369a1;--router-500:#0284c7;--router-100:#e0effe;--router-50:#f0f7ff;--line:#e2e8f0;--ink:#1e293b;--bg-primary:#f1f5f9;--bg-secondary:#ffffff;--bg-tertiary:#f8fafc;--bg-hover:#f1f5f9;--text-primary:#1e293b;--text-secondary:#475569;--text-tertiary:#64748b;--border-primary:#e2e8f0;--border-secondary:#cbd5e1;--shadow-color:rgba(15,23,42,0.08);--shadow-strong:rgba(15,23,42,0.12)}
 *{box-sizing:border-box}html{scroll-behavior:smooth;touch-action:pan-x pan-y}html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{font-family:'Prompt',system-ui,sans-serif!important;background:#f1f5f9!important;color:#1e293b!important;font-size:14px}
 body:before{content:'ROUTER DEPT  /  ระบบขอลาพนักงาน';display:block;min-height:58px;padding:16px clamp(16px,4vw,48px);background:linear-gradient(100deg,#0f172a 0%,#1e3a8a 52%,#082f49 100%);color:#fff;font-size:16px;font-weight:700;letter-spacing:.2px;box-shadow:0 5px 18px #0f172a20}
-#loginPage{min-height:calc(100vh - 58px)!important;align-items:flex-start!important;padding-top:clamp(28px,6vh,64px)!important;background:radial-gradient(ellipse at top,#dbeafe 0%,#f1f5f9 56%)!important}
-#loginPage>div{border:1px solid #e2e8f0;border-radius:24px!important;padding:clamp(22px,5vw,36px)!important;box-shadow:0 18px 50px #0f172a12!important}
-#loginPage .w-20.h-20{width:68px!important;height:68px!important;border-radius:18px!important;background:linear-gradient(135deg,#0284c7,#1e3a8a)!important;box-shadow:0 8px 20px #0284c733}
-#loginPage h1{font-size:26px!important;letter-spacing:-.4px;color:#0f172a}#loginPage p{line-height:1.7}
+
+/* ===== MODERN COVER (LOGIN) PAGE ===== */
+#loginPage{position:relative;min-height:calc(100vh - 58px)!important;padding:clamp(16px,3.5vw,44px)!important;overflow:hidden;background:#020617!important}
+#loginPage:not(.hidden){display:flex;align-items:center;justify-content:center}
+#loginPage .cover-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
+#loginPage .cover-bg::after{content:'';position:absolute;inset:0;background:radial-gradient(1100px 560px at 82% -10%,rgba(56,189,248,.20),transparent 60%),radial-gradient(900px 520px at -8% 110%,rgba(45,212,191,.16),transparent 55%)}
+#loginPage .cover-blob{position:absolute;border-radius:50%;filter:blur(72px);opacity:.55;will-change:transform}
+#loginPage .cb1{width:420px;height:420px;left:-130px;top:-130px;background:radial-gradient(circle at 30% 30%,#0ea5e9,transparent 65%);animation:coverFloat 14s ease-in-out infinite}
+#loginPage .cb2{width:380px;height:380px;right:-110px;top:22%;background:radial-gradient(circle at 60% 40%,#6366f1,transparent 65%);animation:coverFloat 18s ease-in-out infinite reverse}
+#loginPage .cb3{width:340px;height:340px;left:30%;bottom:-150px;background:radial-gradient(circle at 50% 50%,#14b8a6,transparent 65%);animation:coverFloat 16s ease-in-out infinite;animation-delay:-6s}
+#loginPage .cover-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.09) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 72%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 72%)}
+@keyframes coverFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(42px,-30px) scale(1.08)}}
+#loginPage .cover-wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(26px,4.5vw,64px);align-items:center;width:100%;max-width:1120px;margin:0 auto}
+#loginPage .cover-brand{padding:8px 4px;color:#e2e8f0}
+#loginPage .cover-logo{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;background:linear-gradient(135deg,#38bdf8,#6366f1);box-shadow:0 12px 32px rgba(56,189,248,.35);margin-bottom:22px}
+#loginPage .cover-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:1.5px;color:#7dd3fc;background:rgba(56,189,248,.12);border:1px solid rgba(125,211,252,.3);margin-bottom:18px}
+#loginPage .cover-title{font-size:clamp(34px,4.6vw,54px)!important;line-height:1.15!important;font-weight:800!important;letter-spacing:-.5px!important;color:#f8fafc!important;margin:0 0 16px}
+#loginPage .cover-title span{background:linear-gradient(90deg,#38bdf8,#2dd4bf);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+#loginPage .cover-sub{font-size:15px!important;line-height:1.85!important;color:#94a3b8!important;max-width:46ch;margin:0 0 26px}
+#loginPage .cover-feats{list-style:none;margin:0 0 30px;padding:0;display:flex;flex-direction:column;gap:12px}
+#loginPage .cover-feats li{display:flex;align-items:center;gap:12px;font-size:14.5px;font-weight:500;color:#cbd5e1}
+#loginPage .cover-feats li span{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#7dd3fc;background:rgba(56,189,248,.12);border:1px solid rgba(125,211,252,.22)}
+#loginPage .cover-foot{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#64748b}
+#loginPage .cover-foot i{color:#34d399}
+#loginPage .cover-card{position:relative;border-radius:24px!important;padding:clamp(24px,3vw,34px)!important;background:rgba(15,23,42,.55)!important;border:1px solid rgba(148,163,184,.2)!important;box-shadow:0 30px 80px rgba(2,6,23,.55)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+#loginPage .cover-card-head{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+#loginPage .cover-card-icon{flex:0 0 48px;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;background:linear-gradient(135deg,#0ea5e9,#6366f1);box-shadow:0 8px 22px rgba(14,165,233,.4)}
+#loginPage .cover-card-head h2{margin:0;font-size:20px!important;font-weight:700!important;color:#f8fafc!important;letter-spacing:-.2px}
+#loginPage .cover-card-head p{margin:2px 0 0;font-size:13px!important;line-height:1.6!important;color:#94a3b8!important}
+#loginPage .cover-card-head p i{font-size:12px;color:#7dd3fc}
+#loginPage .cover-card-head p i:first-child{margin-right:6px}
+#loginPage .cover-card-head p i:last-child{margin-left:6px;color:#38bdf8}
+#connStatus{position:absolute;top:16px;right:16px;z-index:5}
+#connStatus>span{box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+#loginPage .cover-card label{color:#cbd5e1!important;font-weight:600!important;font-size:13px!important}
+#loginPage .cover-card input,#loginPage .cover-card select{background:rgba(2,6,23,.5)!important;border:1px solid rgba(148,163,184,.28)!important;color:#f1f5f9!important;border-radius:12px!important}
+#loginPage .cover-card input::placeholder{color:#64748b}
+#loginPage .cover-card input:focus,#loginPage .cover-card select:focus{border-color:#38bdf8!important;box-shadow:0 0 0 3px rgba(56,189,248,.22)!important}
+#loginPage .cover-card select option{color:#0f172a;background:#fff}
+#loginPage .text-red-500{color:#fca5a5!important}
+#loginForm button[type=submit]{background:linear-gradient(135deg,#0ea5e9,#6366f1)!important;border:0!important;box-shadow:0 10px 26px rgba(14,165,233,.4)!important;font-weight:700!important;letter-spacing:.2px;transition:transform .15s,box-shadow .15s,filter .15s}
+#loginForm button[type=submit]:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 14px 30px rgba(14,165,233,.5)!important}
+#loginPage .cover-admin{margin-top:18px;padding-top:16px;border-top:1px solid rgba(148,163,184,.16);text-align:center}
+#loginPage #btnAdminLogin{background:rgba(148,163,184,.12)!important;border:1px solid rgba(148,163,184,.3)!important;color:#cbd5e1!important;border-radius:10px!important}
+#loginPage #btnAdminLogin:hover{background:rgba(148,163,184,.22)!important;color:#f1f5f9!important}
+#loginPage .cover-hint{margin:16px 0 0;font-size:12px!important;line-height:1.7!important;color:#64748b!important;text-align:center}
+#loginPage .cover-pwhint{margin:6px 0 0;font-size:12px!important;line-height:1.6!important;color:#94a3b8!important}
+#loginPage .cover-pwhint i{color:#38bdf8;margin-right:4px}
+#loginPage .cover-pwhint strong{color:#e0f2fe;font-weight:600;letter-spacing:.5px}
+#loginPage .cover-hint i{margin-right:4px;color:#38bdf8}
+@media(max-width:900px){
+ #loginPage .cover-wrap{grid-template-columns:1fr;max-width:540px;gap:22px}
+ #loginPage .cover-brand{text-align:center;padding:10px 0 0}
+ #loginPage .cover-logo{margin:0 auto 16px}
+ #loginPage .cover-feats,#loginPage .cover-foot{display:none}
+ #loginPage .cover-sub{font-size:14px!important;margin:0 auto}
+ #loginPage .cover-title{font-size:clamp(30px,8vw,40px)!important}
+}
+@media(max-width:640px){
+ #loginPage{min-height:calc(100vh - 52px)!important;padding:14px!important}
+ #loginPage .cover-card{border-radius:20px!important;padding:20px 16px!important}
+ #loginPage .cover-title{font-size:clamp(28px,8.5vw,36px)!important}
+}
+
+/* ===== COVER — LIGHT THEME VARIANT ===== */
+html[data-theme="light"] #loginPage{background:linear-gradient(160deg,#f0f9ff 0%,#eef2ff 48%,#f0fdfa 100%)!important}
+html[data-theme="light"] #loginPage .cover-bg::after{background:radial-gradient(1100px 560px at 82% -10%,rgba(14,165,233,.16),transparent 60%),radial-gradient(900px 520px at -8% 110%,rgba(20,184,166,.14),transparent 55%)}
+html[data-theme="light"] #loginPage .cover-blob{opacity:.5}
+html[data-theme="light"] #loginPage .cb1{background:radial-gradient(circle at 30% 30%,#7dd3fc,transparent 65%)}
+html[data-theme="light"] #loginPage .cb2{background:radial-gradient(circle at 60% 40%,#a5b4fc,transparent 65%)}
+html[data-theme="light"] #loginPage .cb3{background:radial-gradient(circle at 50% 50%,#5eead4,transparent 65%)}
+html[data-theme="light"] #loginPage .cover-grid{background-image:linear-gradient(rgba(15,23,42,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.05) 1px,transparent 1px)}
+html[data-theme="light"] #loginPage .cover-brand{color:#334155}
+html[data-theme="light"] #loginPage .cover-badge{color:#0369a1;background:rgba(2,132,199,.1);border-color:rgba(2,132,199,.25)}
+html[data-theme="light"] #loginPage .cover-title{color:#0f172a!important}
+html[data-theme="light"] #loginPage .cover-title span{background:linear-gradient(90deg,#0284c7,#0d9488);-webkit-background-clip:text;background-clip:text}
+html[data-theme="light"] #loginPage .cover-sub{color:#64748b!important}
+html[data-theme="light"] #loginPage .cover-feats li{color:#334155}
+html[data-theme="light"] #loginPage .cover-feats li span{color:#0284c7;background:rgba(2,132,199,.08);border-color:rgba(2,132,199,.2)}
+html[data-theme="light"] #loginPage .cover-foot{color:#94a3b8}
+html[data-theme="light"] #loginPage .cover-foot i{color:#059669}
+html[data-theme="light"] #loginPage .cover-card{background:rgba(255,255,255,.72)!important;border:1px solid rgba(15,23,42,.08)!important;box-shadow:0 30px 80px rgba(15,23,42,.14)!important}
+html[data-theme="light"] #loginPage .cover-card-head h2{color:#0f172a!important}
+html[data-theme="light"] #loginPage .cover-card-head p{color:#64748b!important}
+html[data-theme="light"] #loginPage .cover-card-head p i{color:#0284c7}
+html[data-theme="light"] #connStatus>span{box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+html[data-theme="light"] #loginPage .cover-card label{color:#334155!important}
+html[data-theme="light"] #loginPage .cover-card input,html[data-theme="light"] #loginPage .cover-card select{background:#fff!important;border:1px solid #cbd5e1!important;color:#0f172a!important}
+html[data-theme="light"] #loginPage .cover-card input::placeholder{color:#94a3b8}
+html[data-theme="light"] #loginPage .cover-card input:focus,html[data-theme="light"] #loginPage .cover-card select:focus{border-color:#0284c7!important;box-shadow:0 0 0 3px rgba(2,132,199,.15)!important}
+html[data-theme="light"] #loginPage .text-red-500{color:#dc2626!important}
+html[data-theme="light"] #loginForm button[type=submit]{background:linear-gradient(135deg,#0284c7,#4f46e5)!important;box-shadow:0 10px 26px rgba(2,132,199,.35)!important}
+html[data-theme="light"] #loginForm button[type=submit]:hover{box-shadow:0 14px 30px rgba(2,132,199,.45)!important}
+html[data-theme="light"] #loginPage .cover-admin{border-top-color:rgba(15,23,42,.08)}
+html[data-theme="light"] #loginPage #btnAdminLogin{background:rgba(15,23,42,.04)!important;border:1px solid rgba(15,23,42,.12)!important;color:#475569!important}
+html[data-theme="light"] #loginPage #btnAdminLogin:hover{background:rgba(15,23,42,.08)!important;color:#0f172a!important}
+html[data-theme="light"] #loginPage .cover-hint{color:#94a3b8!important}
+html[data-theme="light"] #loginPage .cover-pwhint{color:#64748b!important}
+html[data-theme="light"] #loginPage .cover-pwhint i{color:#0284c7}
+html[data-theme="light"] #loginPage .cover-pwhint strong{color:#0369a1}
+
 #btnEmployee,#btnManager{border-radius:12px!important;padding:14px 18px!important;font-weight:600!important;box-shadow:0 4px 10px #0f172a0b;transition:transform .15s,box-shadow .15s,filter .15s}
 #btnEmployee{background:#0284c7!important}#btnEmployee:hover{background:#0369a1!important}#btnManager{background:#0f766e!important}#btnManager:hover{background:#115e59!important}
 #employeePage,#managerPage{max-width:1280px;margin:0 auto;padding:24px clamp(12px,3vw,32px) 80px!important}
@@ -82,7 +179,7 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 .selectable-item.is-selected .item-delete{display:block}
 .status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 10px;font-weight:600}
 @media(min-width:768px){#managerPage>.max-w-2xl{max-width:1180px!important}#managerPage #managerDashboard .grid{gap:14px}}
-@media(max-width:640px){body:before{min-height:52px;padding:14px 16px;font-size:14px}#loginPage{min-height:calc(100vh - 52px)!important;padding:22px 14px!important}#loginPage>div{border-radius:20px!important}#employeePage,#managerPage{padding:14px 10px 70px!important}#employeePage .bg-white.rounded-xl,#managerPage .bg-white.rounded-xl{padding:15px!important;border-radius:15px!important}#employeePage h2,#managerPage h2{font-size:18px!important}.month-grid{gap:3px}.month-day{min-height:58px!important;padding:3px!important;border-radius:7px!important}.month-day .day-num{font-size:11px}.month-day .day-count,.month-day .day-names{font-size:8px!important}.month-nav{flex-wrap:wrap}.summary-scroll{max-width:100%}#managerDashboard .text-3xl{font-size:25px!important}}
+@media(max-width:640px){body:before{min-height:52px;padding:14px 16px;font-size:14px}#employeePage,#managerPage{padding:14px 10px 70px!important}#employeePage .bg-white.rounded-xl,#managerPage .bg-white.rounded-xl{padding:15px!important;border-radius:15px!important}#employeePage h2,#managerPage h2{font-size:18px!important}.month-grid{gap:3px}.month-day{min-height:58px!important;padding:3px!important;border-radius:7px!important}.month-day .day-num{font-size:11px}.month-day .day-count,.month-day .day-names{font-size:8px!important}.month-nav{flex-wrap:wrap}.summary-scroll{max-width:100%}#managerDashboard .text-3xl{font-size:25px!important}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 #statsPage{max-width:1280px;margin:0 auto;padding:24px clamp(12px,3vw,32px) 80px!important}
@@ -183,10 +280,7 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 /* พื้นหลักของทุกหน้า */
 [data-theme="dark"] body{background-color:#0f172a!important;color:#f1f5f9!important}
 [data-theme="dark"] body:before{background:linear-gradient(100deg,#020617 0%,#1e3a8a 52%,#082f49 100%)!important;color:#fff!important}
-[data-theme="dark"] #loginPage{background:radial-gradient(ellipse at top,#0c4a6e 0%,#0f172a 58%)!important}
-[data-theme="dark"] #loginPage>div{background-color:var(--bg-secondary)!important;border-color:var(--border-primary)!important}
-[data-theme="dark"] #loginPage h1{color:#f8fafc!important}
-[data-theme="dark"] #loginPage p{color:#cbd5e1!important}
+
 [data-theme="dark"] #employeePage h2,[data-theme="dark"] #managerPage h2,[data-theme="dark"] #statsPage h2{color:#f8fafc!important}
 [data-theme="dark"] #employeePage h3,[data-theme="dark"] #managerPage h3,[data-theme="dark"] #statsPage h3{color:#f8fafc!important}
 
@@ -337,18 +431,37 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 </style>
           </head>
           <body class="bg-gray-100 text-gray-800">
-            <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
-              <div class="relative bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
-                <div class="text-center mb-8">
-                  <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fa fa-building text-white text-3xl"></i>
+            <div id="loginPage" class="cover">
+              <div class="cover-bg" aria-hidden="true">
+                <span class="cover-blob cb1"></span>
+                <span class="cover-blob cb2"></span>
+                <span class="cover-blob cb3"></span>
+                <span class="cover-grid"></span>
+              </div>
+              <div class="cover-wrap">
+                <section class="cover-brand">
+                  <div class="cover-logo"><i class="fa fa-route"></i></div>
+                  <span class="cover-badge"><i class="fa fa-circle-nodes"></i> ROUTER DEPT</span>
+                  <h1 class="cover-title">ระบบขอลา<br><span>พนักงาน</span></h1>
+                  <p class="cover-sub">ศูนย์กลางการลางานของแผนก ROUTER — ยื่นคำขอ ติดตามสถานะ และดูปฏิทินทีมได้ในที่เดียว ทุกที่ ทุกเวลา</p>
+                  <ul class="cover-feats">
+                    <li><span><i class="fa fa-bolt"></i></span>ขอลา &amp; อนุมัติ ในไม่กี่คลิก</li>
+                    <li><span><i class="fa fa-calendar-check"></i></span>ปฏิทินทีมอัปเดตแบบเรียลไทม์</li>
+                    <li><span><i class="fa fa-chart-line"></i></span>รายงานสรุป &amp; สถิติอัตโนมัติ</li>
+                  </ul>
+                  <div class="cover-foot"><i class="fa fa-shield-halved"></i> เชื่อมต่อคลาวด์ · ข้อมูลปลอดภัย</div>
+                </section>
+                <section class="cover-card">
+                  <div id="connStatus" title="กำลังเชื่อมต่อระบบ..." aria-label="กำลังเชื่อมต่อระบบ...">
+                    <span class="block w-4 h-4 rounded-full bg-orange-500 animate-pulse"></span>
                   </div>
-                  <h1 class="text-2xl font-bold">แผนก ROUTER</h1>
-                  <p class="text-gray-500">ระบบขอลาพนักงาน</p>
-                </div>
-                <div id="connStatus" class="absolute top-3 right-3 z-50" title="กำลังเชื่อมต่อระบบ..." aria-label="กำลังเชื่อมต่อระบบ...">
-                  <span class="block w-4 h-4 rounded-full bg-orange-500 animate-pulse"></span>
-                </div>
+                  <div class="cover-card-head">
+                    <div class="cover-card-icon"><i class="fa fa-user-lock"></i></div>
+                    <div>
+                      <h2>ยินดีต้อนรับกลับ 👋 ระบบขอลาพนักงาน</h2>
+                      <p><i class="fa fa-pen-to-square"></i> กรอกข้อมูลเพื่อเริ่มใช้งาน <i class="fa fa-angles-right"></i></p>
+                    </div>
+                  </div>
                   <form id="loginForm" class="space-y-4">
                     <div>
                       <label for="loginUsername" class="block text-sm font-medium mb-1">ชื่อพนักงาน</label>
@@ -359,13 +472,14 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                     <div>
                       <label for="loginPassword" class="block text-sm font-medium mb-1">รหัสผ่าน (Password)</label>
                       <input type="password" id="loginPassword" autocomplete="current-password" required class="w-full px-4 py-2 border rounded-lg" placeholder="กรอกรหัสผ่าน">
+                      <p class="cover-pwhint"><i class="fa fa-circle-info"></i> รหัสผ่านผู้เริ่มต้นใช้งาน: <strong>123456</strong></p>
                     </div>
                     <p id="loginError" class="text-red-500 text-sm hidden text-center">❌ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง</p>
                     <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
                       <i class="fa fa-sign-in-alt mr-2"></i> เข้าสู่ระบบ
                     </button>
                   </form>
-                  <div class="mt-6 pt-6 border-t text-center">
+                  <div class="cover-admin">
                     <button type="button" id="btnAdminLogin" class="logout-btn text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border font-medium"></button>
                   </div>
                   <form id="adminLoginForm" class="space-y-3 hidden mt-4">
@@ -380,9 +494,10 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                       <button type="button" id="btnAdminCancel" class="py-2 px-4 bg-gray-200 rounded-lg">ยกเลิก</button>
                     </div>
                   </form>
-                  <p class="text-xs text-gray-500 text-center mt-4">เลือกชื่อพนักงานจากรายการ แล้วกรอกรหัสผ่านของแต่ละคน</p>
-                </div>
+                  <p class="cover-hint"><i class="fa fa-circle-info"></i> เลือกชื่อพนักงานจากรายการ แล้วกรอกรหัสผ่านของแต่ละคน</p>
+                </section>
               </div>
+            </div>
                     <div id="employeePage" class="hidden min-h-screen p-4 pb-20">
                       <div class="max-w-lg mx-auto">
                         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
