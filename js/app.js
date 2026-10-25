@@ -1,5 +1,5 @@
 
-const firebaseConfig={apiKey:"AIzaSyAHXyYU4UzsPWxBRUpfJCRqs6ivX6X3i-E",authDomain:"leave-system-router.firebaseapp.com",databaseURL:"https://leave-system-router-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"leave-system-router",storageBucket:"leave-system-router.firebasestorage.app",messagingSenderId:"890248694626",appId:"1:890248694626:web:8782cbc2a0ef3aa3a07a3b",measurementId:"G-386BNJ1MXV"};
+const firebaseConfig={apiKey:"AIzaSyAQ5nko7F7jTXZIcgJvaCVjVFDqJ3f06wA",authDomain:"leave-system-router.firebaseapp.com",databaseURL:"https://leave-system-router-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"leave-system-router",storageBucket:"leave-system-router.firebasestorage.app",messagingSenderId:"890248694626",appId:"1:890248694626:web:8782cbc2a0ef3aa3a07a3b",measurementId:"G-386BNJ1MXV"};
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 try{if(firebase.analytics)firebase.analytics();}catch(e){console.warn('Analytics unavailable',e);}
 const db=firebase.database();
