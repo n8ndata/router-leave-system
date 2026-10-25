@@ -38,7 +38,7 @@
 @media(max-width:640px){.summary-scroll{max-height:280px;padding:6px}.summary-scroll .summary-item{font-size:14px}}
 
 /* ROUTERROOM-INSPIRED UI LAYER — visual-only overrides; leave original IDs and JS intact */
-:root{color-scheme:light;--router-900:#082f49;--router-800:#0c4a6e;--router-700:#075985;--router-600:#0369a1;--router-500:#0284c7;--router-100:#e0effe;--router-50:#f0f7ff;--line:#e2e8f0;--ink:#1e293b}
+:root{color-scheme:light;--router-900:#082f49;--router-800:#0c4a6e;--router-700:#075985;--router-600:#0369a1;--router-500:#0284c7;--router-100:#e0effe;--router-50:#f0f7ff;--line:#e2e8f0;--ink:#1e293b;--bg-primary:#f1f5f9;--bg-secondary:#ffffff;--bg-tertiary:#f8fafc;--bg-hover:#f1f5f9;--text-primary:#1e293b;--text-secondary:#475569;--text-tertiary:#64748b;--border-primary:#e2e8f0;--border-secondary:#cbd5e1;--shadow-color:rgba(15,23,42,0.08);--shadow-strong:rgba(15,23,42,0.12)}
 *{box-sizing:border-box}html{scroll-behavior:smooth;touch-action:pan-x pan-y}html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{font-family:'Prompt',system-ui,sans-serif!important;background:#f1f5f9!important;color:#1e293b!important;font-size:14px}
 body:before{content:'ROUTER DEPT  /  ระบบขอลาพนักงาน';display:block;min-height:58px;padding:16px clamp(16px,4vw,48px);background:linear-gradient(100deg,#0f172a 0%,#1e3a8a 52%,#082f49 100%);color:#fff;font-size:16px;font-weight:700;letter-spacing:.2px;box-shadow:0 5px 18px #0f172a20}
 #loginPage{min-height:calc(100vh - 58px)!important;align-items:flex-start!important;padding-top:clamp(28px,6vh,64px)!important;background:radial-gradient(ellipse at top,#dbeafe 0%,#f1f5f9 56%)!important}
@@ -87,13 +87,253 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 
 #statsPage{max-width:1280px;margin:0 auto;padding:24px clamp(12px,3vw,32px) 80px!important}
 #statsPage>.max-w-3xl{max-width:1180px!important;margin:0 auto}
-#statsPage .bg-white.rounded-xl{border:1px solid #e2e8f0;border-radius:18px!important;box-shadow:0 5px 20px #0f172a08!important;padding:clamp(16px,3vw,26px)!important}
-#statsPage h2{font-size:21px!important;font-weight:700;color:#0f172a;letter-spacing:-.2px}
-#statsPage h3{font-weight:700;letter-spacing:-.1px}
+#statsPage .bg-white.rounded-xl{border:1px solid var(--border-primary);border-radius:18px!important;box-shadow:0 5px 20px var(--shadow-color)!important;padding:clamp(16px,3vw,26px)!important;background:var(--bg-secondary)!important}
+#statsPage h2{font-size:21px!important;font-weight:700;color:var(--text-primary);letter-spacing:-.2px}
+#statsPage h3{font-weight:700;letter-spacing:-.1px;color:var(--text-primary)}
+#statsPage p{color:var(--text-secondary)}
 #statsPage .rounded-lg{border-radius:12px!important}
 #statsPage .text-3xl{font-size:30px!important;line-height:1.2;font-weight:800}
 @media(max-width:640px){#statsPage{padding:14px 10px 70px!important}#statsPage .bg-white.rounded-xl{padding:15px!important;border-radius:15px!important}#statsPage h2{font-size:18px!important}#statsPage .text-3xl{font-size:25px!important}}
 
+/* ===== DARK MODE OVERRIDES FOR TAILWIND UTILITIES ===== */
+:root{--bg-primary:#f1f5f9;--bg-secondary:#ffffff;--bg-tertiary:#f8fafc;--bg-hover:#f1f5f9;--text-primary:#1e293b;--text-secondary:#475569;--text-tertiary:#64748b;--border-primary:#e2e8f0;--border-secondary:#cbd5e1;--shadow-color:rgba(15,23,42,0.08);--shadow-strong:rgba(15,23,42,0.12)}
+[data-theme="dark"]{color-scheme:dark;--bg-primary:#0f172a;--bg-secondary:#1e293b;--bg-tertiary:#0f172a;--bg-hover:#334155;--text-primary:#e2e8f0;--text-secondary:#cbd5e1;--text-tertiary:#94a3b8;--border-primary:#334155;--border-secondary:#475569;--shadow-color:rgba(0,0,0,0.3);--shadow-strong:rgba(0,0,0,0.5)}
+[data-theme="dark"] body{background:var(--bg-primary)!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-white{background-color:var(--bg-secondary)!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-gray-50{background-color:#334155!important;color:#e2e8f0!important}
+[data-theme="dark"] .bg-gray-100{background-color:var(--bg-primary)!important;color:#e2e8f0!important}
+[data-theme="dark"] .bg-slate-50{background-color:#1e293b!important;color:#e2e8f0!important}
+[data-theme="dark"] .bg-slate-100{background-color:#334155!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-blue-50{background-color:rgba(59,130,246,0.25)!important;border-color:rgba(96,165,250,0.6)!important;color:#bfdbfe!important}
+[data-theme="dark"] .bg-green-50{background-color:rgba(16,185,129,0.25)!important;border-color:rgba(52,211,153,0.6)!important;color:#a7f3d0!important}
+[data-theme="dark"] .bg-emerald-50{background-color:rgba(16,185,129,0.25)!important;border-color:rgba(52,211,153,0.6)!important;color:#a7f3d0!important}
+[data-theme="dark"] .bg-amber-50{background-color:rgba(245,158,11,0.25)!important;border-color:rgba(251,191,36,0.6)!important;color:#fde68a!important}
+[data-theme="dark"] .bg-red-50{background-color:rgba(239,68,68,0.25)!important;border-color:rgba(248,113,113,0.6)!important;color:#fecaca!important}
+[data-theme="dark"] .bg-orange-50{background-color:rgba(249,115,22,0.25)!important;border-color:rgba(251,146,60,0.6)!important;color:#fed7aa!important}
+[data-theme="dark"] .bg-indigo-50{background-color:rgba(99,102,241,0.25)!important;border-color:rgba(129,140,248,0.6)!important;color:#c7d2fe!important}
+[data-theme="dark"] .bg-teal-50{background-color:rgba(20,184,166,0.25)!important;border-color:rgba(45,212,191,0.6)!important;color:#99f6e4!important}
+[data-theme="dark"] .bg-purple-50{background-color:rgba(168,85,247,0.25)!important;border-color:rgba(192,132,252,0.6)!important;color:#e9d5ff!important}
+[data-theme="dark"] .bg-rose-50{background-color:rgba(244,63,94,0.25)!important;border-color:rgba(251,113,133,0.6)!important;color:#fecdd3!important}
+[data-theme="dark"] .bg-violet-50{background-color:rgba(139,92,246,0.25)!important;border-color:rgba(167,139,250,0.6)!important;color:#ddd6fe!important}
+
+[data-theme="dark"] .text-gray-900,[data-theme="dark"] .text-gray-800{color:#f8fafc!important}
+[data-theme="dark"] .text-gray-700{color:#e2e8f0!important}
+[data-theme="dark"] .text-gray-600{color:#cbd5e1!important}
+[data-theme="dark"] .text-gray-500{color:#94a3b8!important}
+[data-theme="dark"] .text-gray-400{color:#64748b!important}
+
+[data-theme="dark"] h1,[data-theme="dark"] h2,[data-theme="dark"] h3,[data-theme="dark"] h4,[data-theme="dark"] h5,[data-theme="dark"] h6{color:#f8fafc!important}
+[data-theme="dark"] label{color:#e2e8f0!important}
+
+[data-theme="dark"] .border{border-color:var(--border-primary)!important}
+[data-theme="dark"] .border-t{border-top-color:var(--border-primary)!important}
+[data-theme="dark"] .border-b{border-bottom-color:var(--border-primary)!important}
+[data-theme="dark"] .border-gray-200,[data-theme="dark"] .border-gray-300{border-color:var(--border-secondary)!important}
+[data-theme="dark"] .border-blue-200{border-color:rgba(96,165,250,0.6)!important}
+[data-theme="dark"] .border-green-200{border-color:rgba(52,211,153,0.6)!important}
+[data-theme="dark"] .border-amber-200{border-color:rgba(251,191,36,0.6)!important}
+[data-theme="dark"] .border-red-200{border-color:rgba(248,113,113,0.6)!important}
+[data-theme="dark"] .border-indigo-200{border-color:rgba(129,140,248,0.6)!important}
+[data-theme="dark"] .border-teal-200{border-color:rgba(45,212,191,0.6)!important}
+
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{background-color:#1e293b!important;color:#f1f5f9!important;border-color:#475569!important}
+[data-theme="dark"] input::placeholder,[data-theme="dark"] textarea::placeholder{color:#64748b!important}
+[data-theme="dark"] option{background-color:#1e293b!important;color:#f1f5f9!important}
+
+[data-theme="dark"] .shadow-lg,[data-theme="dark"] .shadow-xl,[data-theme="dark"] .shadow-2xl{box-shadow:0 10px 40px rgba(0,0,0,0.6)!important}
+[data-theme="dark"] .shadow{box-shadow:0 5px 20px rgba(0,0,0,0.4)!important}
+
+[data-theme="dark"] table{color:#e2e8f0!important}
+[data-theme="dark"] thead tr{background-color:#334155!important}
+[data-theme="dark"] thead th{color:#f1f5f9!important}
+[data-theme="dark"] tbody tr{border-color:#334155!important}
+[data-theme="dark"] tbody tr:hover{background-color:#334155!important}
+[data-theme="dark"] tbody td{color:#cbd5e1!important}
+
+[data-theme="dark"] #allRequests > div,[data-theme="dark"] #cancelRequests > div,[data-theme="dark"] #processedRequests > div,[data-theme="dark"] #activityLogList > div{background-color:var(--bg-secondary)!important;border-color:var(--border-primary)!important;color:#f1f5f9!important}
+
+[data-theme="dark"] .month-day{background-color:#1e293b!important;border-color:#475569!important;color:#f1f5f9!important}
+[data-theme="dark"] .month-day.empty{background:transparent!important;border-color:transparent!important}
+[data-theme="dark"] .month-day:hover{background-color:#334155!important;border-color:#38bdf8!important}
+[data-theme="dark"] .month-nav button{background-color:#1e293b!important;color:#38bdf8!important;border-color:#475569!important}
+[data-theme="dark"] .calendar-detail{background-color:#1e293b!important;color:#f1f5f9!important;border-color:#475569!important}
+
+[data-theme="dark"] .holiday-list{background-color:rgba(139,92,246,0.25)!important;border-color:rgba(167,139,250,0.6)!important}
+[data-theme="dark"] .holiday-list h4{color:#c4b5fd!important}
+[data-theme="dark"] .holiday-list ul{color:#e2e8f0!important}
+
+[data-theme="dark"] #toast{box-shadow:0 10px 40px rgba(0,0,0,0.7)!important}
+
+[data-theme="dark"] i.fa,[data-theme="dark"] .fa{color:inherit}
+[data-theme="dark"] .text-blue-800,[data-theme="dark"] .text-blue-700{color:#93c5fd!important}
+[data-theme="dark"] .text-green-800,[data-theme="dark"] .text-green-700{color:#86efac!important}
+[data-theme="dark"] .text-red-800,[data-theme="dark"] .text-red-700{color:#fca5a5!important}
+[data-theme="dark"] .text-yellow-800,[data-theme="dark"] .text-yellow-700{color:#fde68a!important}
+[data-theme="dark"] .text-indigo-800,[data-theme="dark"] .text-indigo-700{color:#c7d2fe!important}
+[data-theme="dark"] .text-teal-800,[data-theme="dark"] .text-teal-700{color:#99f6e4!important}
+[data-theme="dark"] .text-purple-800,[data-theme="dark"] .text-purple-700{color:#e9d5ff!important}
+[data-theme="dark"] .text-orange-800,[data-theme="dark"] .text-orange-700{color:#fdba74!important}
+[data-theme="dark"] .text-emerald-800{color:#6ee7b7!important}
+
+[data-theme="dark"] .selectable-item{background-color:#1e293b!important;color:#f1f5f9!important}
+
+/* ===== DARK MODE v2 — บังคับพื้นหลังเข้มทุกส่วน + ตัวอักษรอ่านชัด ===== */
+[data-theme="dark"]{--bg-primary:#0f172a;--bg-secondary:#1e293b;--bg-tertiary:#172033;--bg-hover:#334155;--panel-soft:#243247;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--text-tertiary:#94a3b8;--border-primary:#334155;--border-secondary:#475569}
+
+/* พื้นหลักของทุกหน้า */
+[data-theme="dark"] body{background-color:#0f172a!important;color:#f1f5f9!important}
+[data-theme="dark"] body:before{background:linear-gradient(100deg,#020617 0%,#1e3a8a 52%,#082f49 100%)!important;color:#fff!important}
+[data-theme="dark"] #loginPage{background:radial-gradient(ellipse at top,#0c4a6e 0%,#0f172a 58%)!important}
+[data-theme="dark"] #loginPage>div{background-color:var(--bg-secondary)!important;border-color:var(--border-primary)!important}
+[data-theme="dark"] #loginPage h1{color:#f8fafc!important}
+[data-theme="dark"] #loginPage p{color:#cbd5e1!important}
+[data-theme="dark"] #employeePage h2,[data-theme="dark"] #managerPage h2,[data-theme="dark"] #statsPage h2{color:#f8fafc!important}
+[data-theme="dark"] #employeePage h3,[data-theme="dark"] #managerPage h3,[data-theme="dark"] #statsPage h3{color:#f8fafc!important}
+
+/* ปุ่มมุมขวา / ปุ่มออก ที่เดิมถูกล็อกด้วย ID ให้เป็นสีขาว */
+[data-theme="dark"] #empLogout,[data-theme="dark"] #mgrLogout,[data-theme="dark"] #btnAdminLogin,[data-theme="dark"] #btnThemeToggle,[data-theme="dark"] #btnThemeToggleMgr,[data-theme="dark"] #btnChangePassword,[data-theme="dark"] #btnCloseStats,[data-theme="dark"] #btnToggleStatsFilters,[data-theme="dark"] #btnTogglePasswordPanel,[data-theme="dark"] #btnRefreshPasswords,[data-theme="dark"] #btnCloseManagerLeaveForm,[data-theme="dark"] #btnCancelAddEmployee{background-color:#334155!important;border-color:#475569!important;color:#f1f5f9!important}
+[data-theme="dark"] #empLogout:hover,[data-theme="dark"] #mgrLogout:hover,[data-theme="dark"] #btnAdminLogin:hover,[data-theme="dark"] #btnThemeToggle:hover,[data-theme="dark"] #btnThemeToggleMgr:hover,[data-theme="dark"] #btnChangePassword:hover,[data-theme="dark"] #btnCloseStats:hover,[data-theme="dark"] #btnToggleStatsFilters:hover,[data-theme="dark"] #btnTogglePasswordPanel:hover,[data-theme="dark"] #btnRefreshPasswords:hover{background-color:#475569!important;color:#fff!important}
+[data-theme="dark"] .logout-btn:hover{background-color:#7f1d1d!important;color:#fecaca!important}
+
+/* กล่องข้อมูลสีอ่อนในหน้าพนักงาน/หัวหน้างาน (เดิมมี ID ทับ dark mode) */
+[data-theme="dark"] #employeePage .bg-blue-50,[data-theme="dark"] #managerPage .bg-blue-50,[data-theme="dark"] .bg-blue-50{background-color:rgba(37,99,235,.18)!important;border-color:rgba(96,165,250,.45)!important;color:#dbeafe!important}
+[data-theme="dark"] #employeePage .bg-green-50,[data-theme="dark"] #managerPage .bg-green-50,[data-theme="dark"] .bg-green-50,[data-theme="dark"] .bg-emerald-50{background-color:rgba(16,185,129,.16)!important;border-color:rgba(52,211,153,.45)!important;color:#d1fae5!important}
+[data-theme="dark"] #employeePage .bg-indigo-50,[data-theme="dark"] #managerPage .bg-indigo-50,[data-theme="dark"] .bg-indigo-50{background-color:rgba(99,102,241,.18)!important;border-color:rgba(129,140,248,.45)!important;color:#e0e7ff!important}
+[data-theme="dark"] .bg-slate-50{background-color:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-gray-50{background-color:#1e293b!important;border-color:#334155!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-gray-100{background-color:#243247!important;border-color:#334155!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-gray-200,[data-theme="dark"] .bg-gray-300,[data-theme="dark"] .bg-slate-200,[data-theme="dark"] .bg-slate-100{background-color:#334155!important;border-color:#475569!important;color:#f1f5f9!important}
+[data-theme="dark"] .bg-teal-50{background-color:rgba(20,184,166,.16)!important;border-color:rgba(45,212,191,.45)!important;color:#ccfbf1!important}
+[data-theme="dark"] .bg-amber-50{background-color:rgba(245,158,11,.16)!important;border-color:rgba(251,191,36,.45)!important;color:#fef3c7!important}
+[data-theme="dark"] .bg-yellow-50{background-color:rgba(234,179,8,.16)!important;border-color:rgba(250,204,21,.45)!important;color:#fef9c3!important}
+[data-theme="dark"] .bg-orange-50{background-color:rgba(249,115,22,.16)!important;border-color:rgba(251,146,60,.45)!important;color:#ffedd5!important}
+[data-theme="dark"] .bg-red-50{background-color:rgba(239,68,68,.16)!important;border-color:rgba(248,113,113,.45)!important;color:#fee2e2!important}
+[data-theme="dark"] .bg-rose-50{background-color:rgba(244,63,94,.16)!important;border-color:rgba(251,113,133,.45)!important;color:#ffe4e6!important}
+[data-theme="dark"] .bg-purple-50{background-color:rgba(168,85,247,.16)!important;border-color:rgba(192,132,252,.45)!important;color:#f3e8ff!important}
+[data-theme="dark"] .bg-violet-50{background-color:rgba(139,92,246,.16)!important;border-color:rgba(167,139,250,.45)!important;color:#ede9fe!important}
+[data-theme="dark"] .bg-sky-50{background-color:rgba(14,165,233,.16)!important;border-color:rgba(56,189,248,.45)!important;color:#e0f2fe!important}
+
+/* ป้ายสีอ่อน ๆ (legend / badge) ให้เป็นโทนเข้มแต่อ่านออก */
+[data-theme="dark"] .bg-sky-100{background-color:rgba(14,165,233,.28)!important;border-color:rgba(56,189,248,.5)!important;color:#bae6fd!important}
+[data-theme="dark"] .bg-rose-100{background-color:rgba(244,63,94,.28)!important;border-color:rgba(251,113,133,.5)!important;color:#fecdd3!important}
+[data-theme="dark"] .bg-amber-100{background-color:rgba(245,158,11,.28)!important;border-color:rgba(251,191,36,.5)!important;color:#fde68a!important}
+[data-theme="dark"] .bg-yellow-100{background-color:rgba(234,179,8,.28)!important;border-color:rgba(250,204,21,.5)!important;color:#fef08a!important}
+[data-theme="dark"] .bg-red-100{background-color:rgba(239,68,68,.3)!important;border-color:rgba(248,113,113,.5)!important;color:#fecaca!important}
+[data-theme="dark"] .bg-orange-100{background-color:rgba(249,115,22,.28)!important;border-color:rgba(251,146,60,.5)!important;color:#fed7aa!important}
+[data-theme="dark"] .bg-violet-100{background-color:rgba(139,92,246,.28)!important;border-color:rgba(167,139,250,.5)!important;color:#ddd6fe!important}
+[data-theme="dark"] .bg-emerald-100{background-color:rgba(16,185,129,.28)!important;border-color:rgba(52,211,153,.5)!important;color:#a7f3d0!important}
+[data-theme="dark"] .bg-green-100{background-color:rgba(34,197,94,.28)!important;border-color:rgba(74,222,128,.5)!important;color:#bbf7d0!important}
+[data-theme="dark"] .bg-blue-100{background-color:rgba(37,99,235,.3)!important;border-color:rgba(96,165,250,.5)!important;color:#bfdbfe!important}
+[data-theme="dark"] .bg-indigo-100{background-color:rgba(99,102,241,.3)!important;border-color:rgba(129,140,248,.5)!important;color:#c7d2fe!important}
+[data-theme="dark"] .bg-teal-100{background-color:rgba(20,184,166,.28)!important;border-color:rgba(45,212,191,.5)!important;color:#99f6e4!important}
+[data-theme="dark"] .bg-purple-100{background-color:rgba(168,85,247,.28)!important;border-color:rgba(192,132,252,.5)!important;color:#e9d5ff!important}
+[data-theme="dark"] .bg-pink-100{background-color:rgba(236,72,153,.28)!important;border-color:rgba(244,114,182,.5)!important;color:#fbcfe8!important}
+[data-theme="dark"] .bg-yellow-400{background-color:#b45309!important;border-color:#d97706!important;color:#fff7ed!important}
+[data-theme="dark"] .bg-green-500{background-color:#15803d!important;border-color:#16a34a!important;color:#fff!important}
+[data-theme="dark"] .bg-red-500{background-color:#b91c1c!important;border-color:#dc2626!important;color:#fff!important}
+[data-theme="dark"] .bg-orange-500{background-color:#c2410c!important;border-color:#ea580c!important;color:#fff!important}
+[data-theme="dark"] .bg-blue-600,[data-theme="dark"] .bg-blue-700{background-color:#1d4ed8!important;border-color:#1d4ed8!important}
+[data-theme="dark"] .bg-green-600,[data-theme="dark"] .bg-green-700{background-color:#15803d!important;border-color:#15803d!important;color:#fff!important}
+[data-theme="dark"] .bg-emerald-600,[data-theme="dark"] .bg-emerald-700{background-color:#047857!important;border-color:#047857!important;color:#fff!important}
+[data-theme="dark"] .bg-teal-600,[data-theme="dark"] .bg-teal-700{background-color:#0f766e!important;border-color:#0f766e!important;color:#fff!important}
+[data-theme="dark"] #btnDownload{background-color:#0369a1!important}
+[data-theme="dark"] #btnDownload:hover{background-color:#075985!important}
+[data-theme="dark"] #btnSyncGoogleSheet{background-color:#047857!important}
+[data-theme="dark"] #btnSyncGoogleSheet:hover{background-color:#065f46!important}
+[data-theme="dark"] .hover\:bg-green-600:hover{background-color:#166534!important}
+[data-theme="dark"] .hover\:bg-red-600:hover{background-color:#991b1b!important}
+[data-theme="dark"] .hover\:bg-orange-600:hover{background-color:#9a3412!important}
+[data-theme="dark"] .hover\:bg-teal-700:hover{background-color:#115e59!important}
+[data-theme="dark"] .hover\:bg-emerald-700:hover{background-color:#065f46!important}
+[data-theme="dark"] .hover\:bg-green-700:hover{background-color:#166534!important}
+
+/* ตัวอักษรสีเข้มที่ยังไม่ได้แปลงในโหมดมืด */
+[data-theme="dark"] .text-slate-900,[data-theme="dark"] .text-slate-800{color:#f1f5f9!important}
+[data-theme="dark"] .text-slate-700,[data-theme="dark"] .text-slate-600{color:#cbd5e1!important}
+[data-theme="dark"] .text-gray-500{color:#a8b6ca!important}
+[data-theme="dark"] .text-gray-400{color:#94a3b8!important}
+[data-theme="dark"] .text-blue-900{color:#bfdbfe!important}
+[data-theme="dark"] .text-green-900,[data-theme="dark"] .text-emerald-900{color:#a7f3d0!important}
+[data-theme="dark"] .text-teal-900{color:#5eead4!important}
+[data-theme="dark"] .text-indigo-900{color:#c7d2fe!important}
+[data-theme="dark"] .text-purple-900,[data-theme="dark"] .text-violet-900{color:#e9d5ff!important}
+[data-theme="dark"] .text-amber-900{color:#fde68a!important}
+[data-theme="dark"] .text-orange-900{color:#fed7aa!important}
+[data-theme="dark"] .text-red-900,[data-theme="dark"] .text-rose-900{color:#fecaca!important}
+[data-theme="dark"] .text-amber-800,[data-theme="dark"] .text-amber-700,[data-theme="dark"] .text-amber-600{color:#fcd34d!important}
+[data-theme="dark"] .text-rose-800,[data-theme="dark"] .text-rose-700{color:#fda4af!important}
+[data-theme="dark"] .text-violet-800,[data-theme="dark"] .text-violet-700{color:#ddd6fe!important}
+[data-theme="dark"] .text-sky-800,[data-theme="dark"] .text-sky-700{color:#bae6fd!important}
+[data-theme="dark"] .text-emerald-700{color:#6ee7b7!important}
+[data-theme="dark"] .text-green-600{color:#86efac!important}
+[data-theme="dark"] .text-red-600{color:#fca5a5!important}
+[data-theme="dark"] .text-red-500{color:#fca5a5!important}
+[data-theme="dark"] .text-blue-600{color:#93c5fd!important}
+[data-theme="dark"] .text-orange-600{color:#fdba74!important}
+[data-theme="dark"] .text-amber-600{color:#fcd34d!important}
+[data-theme="dark"] .text-yellow-600{color:#fde047!important}
+[data-theme="dark"] .text-indigo-600{color:#a5b4fc!important}
+[data-theme="dark"] .text-teal-600{color:#5eead4!important}
+[data-theme="dark"] .text-purple-600{color:#d8b4fe!important}
+[data-theme="dark"] .text-emerald-600{color:#6ee7b7!important}
+[data-theme="dark"] .text-rose-600{color:#fda4af!important}
+[data-theme="dark"] .text-cyan-800,[data-theme="dark"] .text-cyan-700{color:#a5f3fc!important}
+[data-theme="dark"] .text-pink-800,[data-theme="dark"] .text-pink-700{color:#fbcfe8!important}
+
+/* ตารางสรุป: หัวตารางเคยเป็นพื้นสว่าง + ตัวอักษรขาว */
+[data-theme="dark"] .summary-scroll{background-color:var(--bg-secondary)!important;border-color:var(--border-primary)!important}
+[data-theme="dark"] .summary-scroll table{color:#e2e8f0!important}
+[data-theme="dark"] .summary-scroll th{background-color:#243247!important;color:#f8fafc!important;border-bottom-color:#334155!important}
+[data-theme="dark"] .summary-scroll td{color:#cbd5e1!important;border-bottom-color:#334155!important}
+[data-theme="dark"] .summary-scroll .summary-item{color:#e2e8f0!important}
+
+/* ปฏิทิน: คงสีสื่อความหมายแต่เป็นโทนเข้ม อ่านชัด */
+[data-theme="dark"] .month-day{background-color:var(--bg-secondary)!important;border-color:#334155!important;color:#f1f5f9!important}
+[data-theme="dark"] .month-day.weekend-sat{background-color:#0b3a5b!important;border-color:#0284c7!important}
+[data-theme="dark"] .month-day.weekend-sun{background-color:#4c0519!important;border-color:#be123c!important}
+[data-theme="dark"] .month-day.leave-one{background-color:#422006!important;border-color:#d97706!important}
+[data-theme="dark"] .month-day.leave-full{background-color:#450a0a!important;border-color:#dc2626!important}
+[data-theme="dark"] .month-day.weekend-sat .day-num{color:#7dd3fc!important}
+[data-theme="dark"] .month-day.weekend-sun .day-num{color:#fda4af!important}
+[data-theme="dark"] .month-weekday.sat{color:#7dd3fc!important}
+[data-theme="dark"] .month-weekday.sun{color:#fda4af!important}
+[data-theme="dark"] .month-day.empty{background:transparent!important;border-color:transparent!important}
+[data-theme="dark"] .month-day:hover{background-color:#334155!important;border-color:#38bdf8!important}
+[data-theme="dark"] .month-day.today{box-shadow:inset 0 0 0 2px #38bdf8!important}
+[data-theme="dark"] .month-day .day-holiday{background-color:rgba(139,92,246,.28)!important;color:#ddd6fe!important;border-color:rgba(167,139,250,.55)!important}
+[data-theme="dark"] .month-day .day-holiday.special{background-color:rgba(16,185,129,.28)!important;color:#a7f3d0!important;border-color:rgba(52,211,153,.55)!important}
+[data-theme="dark"] .month-day .day-holiday.buddhist{background-color:rgba(249,115,22,.28)!important;color:#fed7aa!important;border-color:rgba(251,146,60,.55)!important}
+[data-theme="dark"] .holiday-list{background-color:rgba(139,92,246,.18)!important;border-color:rgba(167,139,250,.45)!important}
+[data-theme="dark"] .holiday-list h4{color:#c4b5fd!important}
+[data-theme="dark"] .holiday-list ul{color:#e2e8f0!important}
+[data-theme="dark"] .holiday-tag.h{background-color:rgba(139,92,246,.28)!important;color:#ddd6fe!important;border-color:rgba(167,139,250,.55)!important}
+[data-theme="dark"] .holiday-tag.s{background-color:rgba(16,185,129,.28)!important;color:#a7f3d0!important;border-color:rgba(52,211,153,.55)!important}
+[data-theme="dark"] .holiday-tag.b{background-color:rgba(249,115,22,.28)!important;color:#fed7aa!important;border-color:rgba(251,146,60,.55)!important}
+
+/* ช่องกรอกข้อมูล */
+[data-theme="dark"] input:not([type=checkbox]):not([type=radio]),[data-theme="dark"] select,[data-theme="dark"] textarea{background-color:#172033!important;color:#f1f5f9!important;border-color:#475569!important}
+[data-theme="dark"] input::placeholder,[data-theme="dark"] textarea::placeholder{color:#94a3b8!important}
+[data-theme="dark"] option{background-color:#1e293b!important;color:#f1f5f9!important}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator{filter:invert(.85)}
+
+/* เส้นขอบที่ยังเป็นสีอ่อน */
+[data-theme="dark"] .border-gray-100,[data-theme="dark"] .border-slate-200,[data-theme="dark"] .border-slate-300{border-color:#334155!important}
+[data-theme="dark"] .border-teal-300,[data-theme="dark"] .border-emerald-200,[data-theme="dark"] .border-sky-200,[data-theme="dark"] .border-violet-200,[data-theme="dark"] .border-purple-200{border-color:rgba(148,163,184,.5)!important}
+[data-theme="dark"] .border-yellow-300{border-color:rgba(250,204,21,.55)!important}
+[data-theme="dark"] .border-red-300{border-color:rgba(248,113,113,.55)!important}
+[data-theme="dark"] .border-green-300{border-color:rgba(52,211,153,.55)!important}
+[data-theme="dark"] .border-orange-200{border-color:rgba(251,146,60,.45)!important}
+[data-theme="dark"] .border-rose-200{border-color:rgba(251,113,133,.45)!important}
+
+/* hover ของปุ่มโทนสว่าง ไม่ให้กลับไปเป็นสีขาว/เทาอ่อน */
+[data-theme="dark"] .hover\:bg-gray-50:hover,[data-theme="dark"] .hover\:bg-gray-100:hover,[data-theme="dark"] .hover\:bg-gray-200:hover,[data-theme="dark"] .hover\:bg-gray-300:hover,[data-theme="dark"] .hover\:bg-slate-100:hover{background-color:#475569!important;color:#f8fafc!important}
+
+/* กล่องข้อความแจ้งเตือน / toast */
+[data-theme="dark"] #toast{box-shadow:0 10px 40px rgba(0,0,0,.7)!important}
+
+/* ปุ่ม/การ์ดที่พิมพ์จาก JS ให้พื้นหลังเข้มเสมอ */
+[data-theme="dark"] .selectable-item{background-color:#1e293b!important;color:#f1f5f9!important}
+[data-theme="dark"] #dashOutstandingList .summary-item,[data-theme="dark"] #processedRequests > div,[data-theme="dark"] #activityLogList > div,[data-theme="dark"] #allLeaveCalendar > div,[data-theme="dark"] #myRequests > div{color:#e2e8f0!important}
 </style>
           </head>
           <body class="bg-gray-100 text-gray-800">
@@ -151,7 +391,9 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                               <h2 class="text-xl font-bold">📝 แบบฟอร์มขอลา</h2>
                               <p id="empUserInfo" class="text-sm text-gray-600 mt-1"></p>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-2 flex-wrap">
+                              <button id="btnThemeToggle" onclick="toggleThemeMode()" class="text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border font-medium" title="เปลี่ยนธีม">
+                                <i id="themeIcon" class="fa fa-moon mr-1"></i> <span id="themeText">อัตโนมัติ</span></button>
                               <button id="btnChangePassword" class="text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border font-medium">
                                 <i class="fa fa-key mr-1"></i> เปลี่ยนรหัสผ่าน</button>
                               <button id="empLogout" class="logout-btn text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border font-medium">
@@ -233,7 +475,9 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
                                               <h2 class="text-xl font-bold">✅ จัดการคำขอลาพนักงาน</h2>
                                               <p id="mgrUserInfo" class="text-sm text-gray-600 mt-1"></p>
                                             </div>
-                                            <div class="flex gap-3 items-center">
+                                            <div class="flex gap-2 items-center flex-wrap">
+                                              <button id="btnThemeToggleMgr" onclick="toggleThemeMode()" class="text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border font-medium text-sm" title="เปลี่ยนธีม">
+                                                <i id="themeIconMgr" class="fa fa-moon mr-1"></i> <span id="themeTextMgr">อัตโนมัติ</span></button>
                                               <button id="btnSyncGoogleSheet" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm flex items-center font-medium shadow-sm transition" title="ซิงค์ข้อมูลทั้งหมดลง Google Sheet"><i class="fa fa-table mr-1"></i> ซิงค์ Google Sheet</button>
                                                <button id="btnDownload" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
                                                 <i class="fa fa-download mr-1">
@@ -602,6 +846,105 @@ try{if(firebase.analytics)firebase.analytics();}catch(e){console.warn('Analytics
 const db=firebase.database();
 const EMPLOYEE_LIST=["นายพิชิตพงษ์ ศรีเขตร์","นายแสงอรุณ สุวรรณโคตร","นายปัญญาเลิศ จรรยากรณ์","นายธวัชชัย จันทร์จำนงค์","นายวรายุทธ์ แข็งตะโนด","นางสาวปาริฉัตร ปวนยา","นายสามารถ โสพิศ","นายอภิชาติ วันลา","นายกมล พงษ์กิ่ง","นายอัถธสิทธิ์ อสิพงษ์","นายประมวล เลิศยะโส","นายธวัชชัย บุญเสริม","นายชัยยนต์ พุทธนาวงค์","นายบรรหาร บุสสานาม","นางสาวนิตยา มนตะราช","นายธวัชชัย สันพี","นายพีระพล ชะอุ่มเกตุ"];
 let leaveRequests=[],currentUser=null,firebaseListener=null,connectionListener=null,toastTimer=null,managerMode=false,adminMode=false;
+
+// ===== Theme System - Auto dark/light mode by time =====
+function applyThemeByTime(forceTheme){
+  try{
+    if(forceTheme){
+      document.documentElement.setAttribute('data-theme', forceTheme);
+      localStorage.setItem('router_theme_mode', forceTheme);
+      return;
+    }
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    if(savedMode === 'light'){
+      document.documentElement.setAttribute('data-theme', 'light');
+      return;
+    }
+    if(savedMode === 'dark'){
+      document.documentElement.setAttribute('data-theme', 'dark');
+      return;
+    }
+    // Auto mode: 19:00-05:59 = dark, 06:00-18:59 = light
+    const hour = new Date().getHours();
+    const isDark = hour >= 19 || hour < 6;
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  }catch(e){
+    console.warn('Theme apply error:', e);
+  }
+}
+
+function updateThemeUI(){
+  try{
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    const icon1 = document.getElementById('themeIcon');
+    const text1 = document.getElementById('themeText');
+    const icon2 = document.getElementById('themeIconMgr');
+    const text2 = document.getElementById('themeTextMgr');
+    
+    if(savedMode === 'light'){
+      if(icon1) { icon1.className = 'fa fa-sun mr-1'; }
+      if(text1) text1.textContent = 'สว่าง';
+      if(icon2) { icon2.className = 'fa fa-sun mr-1'; }
+      if(text2) text2.textContent = 'สว่าง';
+    }else if(savedMode === 'dark'){
+      if(icon1) { icon1.className = 'fa fa-moon mr-1'; }
+      if(text1) text1.textContent = 'มืด';
+      if(icon2) { icon2.className = 'fa fa-moon mr-1'; }
+      if(text2) text2.textContent = 'มืด';
+    }else{
+      if(icon1) { icon1.className = 'fa fa-clock mr-1'; }
+      if(text1) text1.textContent = 'อัตโนมัติ';
+      if(icon2) { icon2.className = 'fa fa-clock mr-1'; }
+      if(text2) text2.textContent = 'อัตโนมัติ';
+    }
+  }catch(e){
+    console.warn('Update theme UI error:', e);
+  }
+}
+
+function toggleThemeMode(){
+  try{
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    if(savedMode === 'auto'){
+      localStorage.setItem('router_theme_mode', 'light');
+      applyThemeByTime('light');
+    }else if(savedMode === 'light'){
+      localStorage.setItem('router_theme_mode', 'dark');
+      applyThemeByTime('dark');
+    }else{
+      localStorage.setItem('router_theme_mode', 'auto');
+      applyThemeByTime();
+    }
+    updateThemeUI();
+    refreshChartsForTheme();
+    if(typeof showToast === 'function') showToast('เปลี่ยนธีมเรียบร้อย');
+  }catch(e){
+    console.warn('Toggle theme error:', e);
+  }
+}
+
+// ให้กราฟทั้งหมดวาดสีใหม่เมื่อสลับธีม เพื่อให้อ่านค่าและชื่อได้ชัด
+function refreshChartsForTheme(){
+  try{
+    const statsPage=document.getElementById('statsPage');
+    if(statsPage&&!statsPage.classList.contains('hidden')&&typeof renderStatsCharts==='function'){
+      setTimeout(renderStatsCharts,60);
+    }
+  }catch(e){
+    console.warn('Refresh charts theme error:', e);
+  }
+}
+
+// Initialize theme
+applyThemeByTime();
+setInterval(() => {
+  const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+  if(savedMode === 'auto'){
+    const before=document.documentElement.getAttribute('data-theme');
+    applyThemeByTime();
+    if(document.documentElement.getAttribute('data-theme')!==before) refreshChartsForTheme();
+  }
+}, 60000);
 const DEFAULT_EMPLOYEE_PASSWORD='123456';
 const ADMIN_BUTTON_LABEL='Admin';
 const APPROVER_GATE={salt:'router-approver-gate-v1',hash:'nHbI32tt7n0zHF+np91EPwpn3VIQITL5d4VULrswspc='};
@@ -1406,7 +1749,7 @@ const statsEmployeeNamePlugin={
     const maxW=Math.max(20,x.right-x.left-8);
     ctx.save();
     ctx.font=`${fontSize}px Prompt, sans-serif`;
-    ctx.fillStyle='#1e293b';
+    ctx.fillStyle=document.documentElement.getAttribute('data-theme')==='dark'?'#e2e8f0':'#1e293b';
     ctx.textAlign='left';
     ctx.textBaseline='bottom';
     chart.data.labels.forEach((label,i)=>{
@@ -1535,7 +1878,11 @@ function renderStatsCharts(){
   const statusColors=STATS_BUCKETS.map(b=>b.color);
   const topDays=dailyEntries.slice().sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,10);
 
-  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Prompt'}}}}};
+  const darkTheme=document.documentElement.getAttribute('data-theme')==='dark';
+  const chartText=darkTheme?'#cbd5e1':'#334155';
+  const chartGrid=darkTheme?'rgba(148,163,184,.22)':'rgba(100,116,139,.16)';
+  if(typeof Chart!=='undefined'){Chart.defaults.color=chartText;Chart.defaults.borderColor=chartGrid;}
+  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Prompt'},color:chartText}}}};
   statsDestroyCharts();
 
   const empCtx=$('chartByEmployee');
@@ -1573,7 +1920,7 @@ function renderStatsCharts(){
           statsEmployeeNames:{enabled:true,fontSize:empFontSize}
         },
         scales:{
-          x:{beginAtZero:true,stacked:true,ticks:{precision:0,font:{family:'Prompt',size:isNarrow?10:11}}},
+          x:{beginAtZero:true,stacked:true,ticks:{precision:0,color:chartText,font:{family:'Prompt',size:isNarrow?10:11}},grid:{color:chartGrid}},
           y:{stacked:true,ticks:{display:false},grid:{display:false}}
         }
       }),
@@ -1594,8 +1941,8 @@ function renderStatsCharts(){
         }}
       },
       scales:{
-        x:{beginAtZero:true,ticks:{precision:0,stepSize:1,font:{family:'Prompt',size:11}}},
-        y:{ticks:{font:{family:'Prompt',size:11},color:'#1e293b'}}
+        x:{beginAtZero:true,ticks:{precision:0,stepSize:1,color:chartText,font:{family:'Prompt',size:11}},grid:{color:chartGrid}},
+        y:{ticks:{font:{family:'Prompt',size:11},color:chartText},grid:{color:chartGrid}}
       }
     });
     statsCharts.topDays=new Chart(topCtx,{
@@ -1680,6 +2027,7 @@ async function handleSubmit(e){e.preventDefault();if(!$('submitBtn').disabled){}
 async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action;if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(action==='edit-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}btn.disabled=true;try{const snap=await db.ref('users/'+key).once('value');const data=snap.val()||{};await editEmployeeUser(key,data);}catch(e){console.error(e);showToast('แก้ไขไม่สำเร็จ: '+(e.message||e.code),true);}finally{btn.disabled=false;}return;}if(action==='delete-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;const name=btn.dataset.name||'';if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}await deleteEmployeeUser(key,name);return;}const req=leaveRequests.find(r=>r.id===id);if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();backupToGoogleSheet('delete',{id:id});logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);backupToGoogleSheet('upsert',Object.assign({},req,updates,{id:id}));const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
 if(action==='approve')notifyLeave('approved',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});else if(action==='reject')notifyLeave('rejected',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});showToast(message);}catch(err){console.error(err);showToast('อัปเดตไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
 document.addEventListener('DOMContentLoaded',async()=>{
+  updateThemeUI();
   checkConnection();
   initEmployeeOptions();
   bootstrapDefaultUsers().catch(()=>{});

@@ -5,6 +5,115 @@ try{if(firebase.analytics)firebase.analytics();}catch(e){console.warn('Analytics
 const db=firebase.database();
 const EMPLOYEE_LIST=["นายพิชิตพงษ์ ศรีเขตร์","นายแสงอรุณ สุวรรณโคตร","นายปัญญาเลิศ จรรยากรณ์","นายธวัชชัย จันทร์จำนงค์","นายวรายุทธ์ แข็งตะโนด","นางสาวปาริฉัตร ปวนยา","นายสามารถ โสพิศ","นายอภิชาติ วันลา","นายกมล พงษ์กิ่ง","นายอัถธสิทธิ์ อสิพงษ์","นายประมวล เลิศยะโส","นายธวัชชัย บุญเสริม","นายชัยยนต์ พุทธนาวงค์","นายบรรหาร บุสสานาม","นางสาวนิตยา มนตะราช","นายธวัชชัย สันพี","นายพีระพล ชะอุ่มเกตุ"];
 let leaveRequests=[],currentUser=null,firebaseListener=null,connectionListener=null,toastTimer=null,managerMode=false,adminMode=false;
+
+// ===== Theme System - Auto dark/light mode by time =====
+function applyThemeByTime(forceTheme){
+  try{
+    if(forceTheme){
+      document.documentElement.setAttribute('data-theme', forceTheme);
+      localStorage.setItem('router_theme_mode', forceTheme);
+      return;
+    }
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    if(savedMode === 'light'){
+      document.documentElement.setAttribute('data-theme', 'light');
+      return;
+    }
+    if(savedMode === 'dark'){
+      document.documentElement.setAttribute('data-theme', 'dark');
+      return;
+    }
+    // Auto mode: 19:00-05:59 = dark, 06:00-18:59 = light
+    const hour = new Date().getHours();
+    const isDark = hour >= 19 || hour < 6;
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  }catch(e){
+    console.warn('Theme apply error:', e);
+  }
+}
+
+function initThemeSystem(){
+  applyThemeByTime();
+  // Update theme every minute to check time
+  setInterval(() => {
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    if(savedMode === 'auto'){
+      const before=document.documentElement.getAttribute('data-theme');
+      applyThemeByTime();
+      if(document.documentElement.getAttribute('data-theme')!==before) refreshChartsForTheme();
+    }
+  }, 60000);
+}
+
+function updateThemeUI(){
+  try{
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    const icon1 = document.getElementById('themeIcon');
+    const text1 = document.getElementById('themeText');
+    const icon2 = document.getElementById('themeIconMgr');
+    const text2 = document.getElementById('themeTextMgr');
+    
+    if(savedMode === 'light'){
+      if(icon1) icon1.className = 'fa fa-sun mr-1';
+      if(text1) text1.textContent = 'สว่าง';
+      if(icon2) icon2.className = 'fa fa-sun mr-1';
+      if(text2) text2.textContent = 'สว่าง';
+    }else if(savedMode === 'dark'){
+      if(icon1) icon1.className = 'fa fa-moon mr-1';
+      if(text1) text1.textContent = 'มืด';
+      if(icon2) icon2.className = 'fa fa-moon mr-1';
+      if(text2) text2.textContent = 'มืด';
+    }else{ // auto
+      if(icon1) icon1.className = 'fa fa-clock mr-1';
+      if(text1) text1.textContent = 'อัตโนมัติ';
+      if(icon2) icon2.className = 'fa fa-clock mr-1';
+      if(text2) text2.textContent = 'อัตโนมัติ';
+    }
+  }catch(e){
+    console.warn('Update theme UI error:', e);
+  }
+}
+
+function toggleThemeMode(){
+  try{
+    const savedMode = localStorage.getItem('router_theme_mode') || 'auto';
+    if(savedMode === 'auto'){
+      localStorage.setItem('router_theme_mode', 'light');
+      applyThemeByTime('light');
+    }else if(savedMode === 'light'){
+      localStorage.setItem('router_theme_mode', 'dark');
+      applyThemeByTime('dark');
+    }else{ // dark
+      localStorage.setItem('router_theme_mode', 'auto');
+      applyThemeByTime();
+    }
+    updateThemeUI();
+    refreshChartsForTheme();
+    showToast('เปลี่ยนธีมเรียบร้อย');
+  }catch(e){
+    console.warn('Toggle theme error:', e);
+  }
+}
+
+// ให้กราฟทั้งหมดวาดสีใหม่เมื่อสลับธีม เพื่อให้อ่านค่าและชื่อได้ชัด
+function refreshChartsForTheme(){
+  try{
+    const statsPage=document.getElementById('statsPage');
+    if(statsPage&&!statsPage.classList.contains('hidden')&&typeof renderStatsCharts==='function'){
+      setTimeout(renderStatsCharts,60);
+    }
+  }catch(e){
+    console.warn('Refresh charts theme error:', e);
+  }
+}
+
+// Initialize theme on load
+if(typeof document !== 'undefined'){
+  initThemeSystem();
+  document.addEventListener('DOMContentLoaded', () => {
+    updateThemeUI();
+  });
+}
 const DEFAULT_EMPLOYEE_PASSWORD='123456';
 const ADMIN_BUTTON_LABEL='Admin';
 const APPROVER_GATE={salt:'router-approver-gate-v1',hash:'nHbI32tt7n0zHF+np91EPwpn3VIQITL5d4VULrswspc='};
@@ -809,7 +918,7 @@ const statsEmployeeNamePlugin={
     const maxW=Math.max(20,x.right-x.left-8);
     ctx.save();
     ctx.font=`${fontSize}px Prompt, sans-serif`;
-    ctx.fillStyle='#1e293b';
+    ctx.fillStyle=document.documentElement.getAttribute('data-theme')==='dark'?'#e2e8f0':'#1e293b';
     ctx.textAlign='left';
     ctx.textBaseline='bottom';
     chart.data.labels.forEach((label,i)=>{
@@ -938,7 +1047,11 @@ function renderStatsCharts(){
   const statusColors=STATS_BUCKETS.map(b=>b.color);
   const topDays=dailyEntries.slice().sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,10);
 
-  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Prompt'}}}}};
+  const darkTheme=document.documentElement.getAttribute('data-theme')==='dark';
+  const chartText=darkTheme?'#cbd5e1':'#334155';
+  const chartGrid=darkTheme?'rgba(148,163,184,.22)':'rgba(100,116,139,.16)';
+  if(typeof Chart!=='undefined'){Chart.defaults.color=chartText;Chart.defaults.borderColor=chartGrid;}
+  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Prompt'},color:chartText}}}};
   statsDestroyCharts();
 
   const empCtx=$('chartByEmployee');
@@ -976,7 +1089,7 @@ function renderStatsCharts(){
           statsEmployeeNames:{enabled:true,fontSize:empFontSize}
         },
         scales:{
-          x:{beginAtZero:true,stacked:true,ticks:{precision:0,font:{family:'Prompt',size:isNarrow?10:11}}},
+          x:{beginAtZero:true,stacked:true,ticks:{precision:0,color:chartText,font:{family:'Prompt',size:isNarrow?10:11}},grid:{color:chartGrid}},
           y:{stacked:true,ticks:{display:false},grid:{display:false}}
         }
       }),
@@ -997,8 +1110,8 @@ function renderStatsCharts(){
         }}
       },
       scales:{
-        x:{beginAtZero:true,ticks:{precision:0,stepSize:1,font:{family:'Prompt',size:11}}},
-        y:{ticks:{font:{family:'Prompt',size:11},color:'#1e293b'}}
+        x:{beginAtZero:true,ticks:{precision:0,stepSize:1,color:chartText,font:{family:'Prompt',size:11}},grid:{color:chartGrid}},
+        y:{ticks:{font:{family:'Prompt',size:11},color:chartText},grid:{color:chartGrid}}
       }
     });
     statsCharts.topDays=new Chart(topCtx,{
