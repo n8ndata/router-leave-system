@@ -48,6 +48,7 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 #employeePage button:not(.month-day),#managerPage button{border-radius:10px}
 #empLogout,#mgrLogout{background:#fff!important;border-color:#cbd5e1!important}
 #btnDownload{background:#0284c7!important}#btnDownload:hover{background:#0369a1!important}
+#btnSyncGoogleSheet{background:#059669!important;color:#fff!important}#btnSyncGoogleSheet:hover{background:#047857!important}
 #managerDashboard .grid>div{border-radius:14px!important;padding:16px!important;box-shadow:0 2px 8px #0f172a06}
 #managerDashboard .text-3xl{font-size:30px!important;line-height:1.2;font-weight:800}
 #employeeMonthCalendar,#managerMonthCalendar{overflow-x:auto}
