@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": true,
+      "$key": {
+        ".write": true,
+        ".validate": "!newData.child('plainPassword').exists() && newData.child('hash').isString() && newData.child('salt').isString()"
+      }
+    },
+    "leaveRequests": {
+      ".read": true,
+      ".write": true,
+      "$id": {
+        ".validate": "newData.hasChildren(['empName','leaveType','startDate','endDate','status'])"
+      }
+    },
+    "activityLog": {
+      ".read": true,
+      ".write": true
+    },
+    "employeeCredentials": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

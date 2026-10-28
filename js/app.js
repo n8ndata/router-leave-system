@@ -134,6 +134,7 @@ function notifyLeave(action,data){
   }catch(e){console.warn('[LINE Notify] error:',action,e);}
 }
 const DEFAULT_GSHEET_WEBAPP_URL='';
+const GSHEET_TOKEN='';
 function getGSheetUrl(){return (localStorage.getItem('router_gsheet_url')||DEFAULT_GSHEET_WEBAPP_URL||'').trim();}
 function promptConfigGSheet(){
   const curr=getGSheetUrl();
@@ -153,7 +154,7 @@ function backupToGoogleSheet(action,data){
     fetch(url,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=UTF-8'},
-      body:JSON.stringify({action:action,data:data,timestamp:new Date().toISOString()}),
+      body:JSON.stringify({action:action,data:data,token:GSHEET_TOKEN,timestamp:new Date().toISOString()}),
       mode:'no-cors'
     }).catch(e=>console.warn('GSheet backup warning:',e));
   }catch(e){console.warn('GSheet backup error:',e);}
@@ -174,10 +175,11 @@ async function handleSyncAllGoogleSheet(){
     await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=UTF-8'},
-      body:JSON.stringify({action:'sync_all',records:leaveRequests,timestamp:new Date().toISOString()}),
-      mode:'no-cors'
+      body:JSON.stringify({action:'sync_all',records:leaveRequests,token:GSHEET_TOKEN,timestamp:new Date().toISOString()}),
+      mode:'no-cors',
+      signal:AbortSignal.timeout(30000)
     });
-    showToast(`ซิงค์ข้อมูล ${leaveRequests.length} รายการลง Google Sheet เรียบร้อยแล้ว`);
+    showToast(`ส่งข้อมูล ${leaveRequests.length} รายการไปยัง Google Sheet แล้ว (โปรดตรวจสอบผลใน Sheet อีกครั้ง)`);
   }catch(err){
     console.error('Google Sheet sync error:',err);
     showToast('เกิดข้อผิดพลาดในการซิงค์ข้อมูล: '+(err.message||err),true);
@@ -186,7 +188,7 @@ async function handleSyncAllGoogleSheet(){
   }
 }
 function stopDataListener(){if(firebaseListener){db.ref('leaveRequests').off('value',firebaseListener);firebaseListener=null;}}
-function logout(){stopDataListener();stopUsersListener();stopActivityListener();activityLogs=[];managerMode=false;adminMode=false;currentUser=null;const empSel=$('empName');if(empSel){empSel.disabled=false;empSel.innerHTML='<option value="">-- กรุณาเลือกชื่อ-นามสกุล --</option>';EMPLOYEE_LIST.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;empSel.appendChild(o);});}const myReq=$('myRequests');if(myReq)myReq.innerHTML='<p class="text-gray-500 text-center py-4">ยังไม่มีประวัติของคุณ</p>';const loginUserSel=$('loginUsername');if(loginUserSel){loginUserSel.value='';}const loginPw=$('loginPassword');if(loginPw){loginPw.value='';}if($('loginError'))$('loginError').classList.add('hidden');if($('adminPanel'))$('adminPanel').classList.add('hidden');hideAdminLogin();showPage('loginPage');showToast('ออกจากระบบเรียบร้อย');}
+function logout(){stopDataListener();stopUsersListener();stopActivityListener();activityLogs=[];managerMode=false;adminMode=false;currentUser=null;const empSel=$('empName');if(empSel){empSel.disabled=false;empSel.innerHTML='<option value="">-- กรุณาเลือกชื่อ-นามสกุล --</option>';getEmployeeList().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;empSel.appendChild(o);});}const myReq=$('myRequests');if(myReq)myReq.innerHTML='<p class="text-gray-500 text-center py-4">ยังไม่มีประวัติของคุณ</p>';const loginUserSel=$('loginUsername');if(loginUserSel){loginUserSel.value='';}const loginPw=$('loginPassword');if(loginPw){loginPw.value='';}if($('loginError'))$('loginError').classList.add('hidden');if($('adminPanel'))$('adminPanel').classList.add('hidden');hideAdminLogin();showPage('loginPage');showToast('ออกจากระบบเรียบร้อย');}
 
 async function hashUserPassword(password,salt){
   const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
@@ -196,7 +198,7 @@ async function hashUserPassword(password,salt){
 async function ensureUser(username, password, empName, role){
   const key=await userKey(username);
   const snap=await db.ref('users/'+key).once('value');
-  if(snap.val()) return;
+  if(snap.val()) return false;
   const salt=crypto.getRandomValues(new Uint8Array(16));
   const hash=await hashUserPassword(password,salt);
   await db.ref('users/'+key).set({
@@ -206,7 +208,6 @@ async function ensureUser(username, password, empName, role){
     role:role,
     salt:bytesToBase64(salt),
     hash:hash,
-    plainPassword:password,
     createdAt:new Date().toISOString()
   });
 }
@@ -217,7 +218,20 @@ async function ensureEmployeeAccounts(){
   }
 }
 async function bootstrapDefaultUsers(){
-  try{ await ensureEmployeeAccounts(); }
+  try{
+    await ensureEmployeeAccounts();
+    const snap=await db.ref('users').once('value');
+    const data=snap.val()||{};
+    const seen=new Map();const updates={};
+    for(const [k,u] of Object.entries(data)){
+      if(!u||typeof u!=='object')continue;
+      if(u.plainPassword!=null)updates[k+'/plainPassword']=null;
+      const ident=String(u.username||u.empName||'').trim().toLowerCase();
+      if(!ident)continue;
+      if(seen.has(ident))updates[k]=null;else seen.set(ident,k);
+    }
+    if(Object.keys(updates).length)await db.ref('users').update(updates);
+  }
   catch(e){ console.warn('bootstrap users failed', e); }
 }
 
@@ -278,7 +292,7 @@ function renderPasswordTable(data){
     name: u.displayName||u.empName||'-',
     empName: u.empName||u.displayName||'-',
     username: u.username||'-',
-    password: u.plainPassword!=null?u.plainPassword:'(เปลี่ยนแล้ว)',
+    password:'(เก็บแบบเข้ารหัส ไม่แสดง)',
     role: u.role||'user',
     updatedAt: u.passwordUpdatedAt||'',
     raw: u
@@ -354,7 +368,6 @@ async function editEmployeeUser(key, current){
       const hash=await hashUserPassword(newPass.trim(), salt);
       updates.salt=bytesToBase64(salt);
       updates.hash=hash;
-      updates.plainPassword=newPass.trim();
       updates.passwordUpdatedAt=new Date().toISOString();
     }
     await db.ref('users/'+key).update(updates);
@@ -391,17 +404,17 @@ async function changeOwnPassword(){
   try{
     const key=await userKey(currentUser);
     const snap=await db.ref('users/'+key).once('value');
-    let userData=snap.val();
+    let userData=snap.val();let recKey=key;
     if(!userData){
       const all=await db.ref('users').once('value');
-      userData=Object.values(all.val()||{}).find(u=>u&&(u.empName===currentUser||u.username===currentUser));
+      for(const [k,u] of Object.entries(all.val()||{})){ if(u&&(u.empName===currentUser||u.username===currentUser)){userData=u;recKey=k;break;} }
     }
     if(!userData||!userData.salt||!userData.hash){ showToast('ไม่พบบัญชีผู้ใช้ของคุณ',true); return; }
     const candidate=await hashUserPassword(current,base64ToBytes(userData.salt));
     if(candidate!==userData.hash){ showToast('รหัสผ่านปัจจุบันไม่ถูกต้อง',true); return; }
     const salt=crypto.getRandomValues(new Uint8Array(16));
     const hash=await hashUserPassword(next,salt);
-    const realKey=await userKey(userData.username||currentUser);
+    const realKey=recKey;
     await db.ref('users/'+realKey).update({
       username: userData.username||currentUser,
       empName: userData.empName||currentUser,
@@ -409,7 +422,6 @@ async function changeOwnPassword(){
       role: userData.role||'user',
       salt:bytesToBase64(salt),
       hash:hash,
-      plainPassword:next,
       passwordUpdatedAt:new Date().toISOString()
     });
     showToast('เปลี่ยนรหัสผ่านเรียบร้อย ระบบหลังบ้านอัปเดตแล้ว');
@@ -464,7 +476,7 @@ async function handleLogin(e){
     if($('loginError'))$('loginError').classList.add('hidden');
     if(role==='approver'||role==='manager'||role==='admin'){
       const info=$('mgrUserInfo');
-      if(info) info.textContent = `ผู้ใช้งาน: ${escapeHTML(currentUser.displayName)} (${currentUser.role})`;
+      if(info) info.textContent = `ผู้ใช้งาน: ${currentUser.displayName} (${currentUser.role})`;
       showPage('managerPage');
       showToast('เข้าสู่ระบบในโหมดผู้อนุมัติ');
     }else{
@@ -484,7 +496,7 @@ async function handleLogin(e){
         currentUser = null;
       }
       const info=$('empUserInfo');
-      if(info) info.textContent = currentUser?`พนักงาน: ${escapeHTML(currentUser)}` : `ผู้ใช้งาน: ${escapeHTML(userData.username||username)}`;
+      if(info) info.textContent = currentUser?`พนักงาน: ${currentUser}` : `ผู้ใช้งาน: ${userData.username||username}`;
       showPage('employeePage');
       showToast('เข้าสู่ระบบสำเร็จ');
       renderEmployeeRequests();
@@ -497,7 +509,8 @@ async function handleLogin(e){
     if($('loginError'))$('loginError').classList.remove('hidden');
   }
 }
-function subscribeToLeaveData(){stopDataListener();firebaseListener=snapshot=>{const data=snapshot.val();leaveRequests=data?Object.entries(data).filter(([,v])=>v&&typeof v==='object').map(([id,val])=>({id,...val})).sort((a,b)=>String(b.submittedAt||'').localeCompare(String(a.submittedAt||''))):[];renderAllVisiblePages();};db.ref('leaveRequests').on('value',firebaseListener,error=>{console.error(error);showToast('โหลดข้อมูลไม่สำเร็จ: '+(error.message||error.code),true);});}
+function reqTS(r){return (Date.parse((r&&r.submittedAtISO)||'')||parseThDateTime(r&&r.submittedAt)||0);}
+function subscribeToLeaveData(){stopDataListener();firebaseListener=snapshot=>{const data=snapshot.val();leaveRequests=data?Object.entries(data).filter(([,v])=>v&&typeof v==='object').map(([id,val])=>({id,...val})).sort((a,b)=>(reqTS(b)-reqTS(a))||String(b.id||'').localeCompare(String(a.id||''))):[];renderAllVisiblePages();};db.ref('leaveRequests').on('value',firebaseListener,error=>{console.error(error);showToast('โหลดข้อมูลไม่สำเร็จ: '+(error.message||error.code),true);});}
 
 // ===== ประวัติการทำรายการ (Activity Log) — บันทึกทุกการกระทำ แสดงในโหมดหัวหน้างาน =====
 let activityLogs=[],activityListener=null,activitySeeded=false;
@@ -554,7 +567,7 @@ function subscribeToActivityLog(){
 function renderActivityLog(){
  const container=$('activityLogList');if(!container)return;
  const filter=$('activityFilter');
- if(filter&&filter.options.length<=1){EMPLOYEE_LIST.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;filter.appendChild(o);});}
+ if(filter&&filter.options.length<=1){getEmployeeList().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;filter.appendChild(o);});}
  const current=filter?filter.value:'';
  const rows=activityLogs.filter(e=>!current||e.empName===current);
  const count=$('activityCount');if(count)count.textContent=rows.length?`ทั้งหมด ${rows.length} รายการ`:'ไม่มีรายการ';
@@ -564,52 +577,6 @@ function renderActivityLog(){
 // Employee-specific password verification. Passwords are stored as salted PBKDF2 hashes, never as plain text.
 function bytesToBase64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes)));}
 function base64ToBytes(value){return Uint8Array.from(atob(value),c=>c.charCodeAt(0));}
-async function employeeKey(name){
- const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('employee-key:'+name));
- return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-async function deriveEmployeePassword(password,salt){
- const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
- const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},material,256);
- return bytesToBase64(bits);
-}
-async function verifyEmployeeTransaction(name){
- if(!name||!EMPLOYEE_LIST.includes(name)){showToast('กรุณาเลือกชื่อพนักงานให้ถูกต้อง',true);return false;}
- if(!window.crypto||!crypto.subtle){showToast('เบราว์เซอร์นี้ไม่รองรับการยืนยันรหัสผ่าน กรุณาเปิดผ่าน HTTPS',true);return false;}
- try{
-  const key=await employeeKey(name),ref=db.ref('employeeCredentials/'+key);
-  let snap=await ref.once('value'),credential=snap.val();
-  if(!credential){
-   const first=prompt('ตั้งรหัสผ่านส่วนตัวสำหรับ '+name+'\nใช้รหัสผ่านอย่างน้อย 6 ตัวอักษร และห้ามใช้ร่วมกับพนักงานคนอื่น');
-   if(first===null)return false;
-   if(first.length<6){showToast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',true);return false;}
-   const second=prompt('กรอกรหัสผ่านเดิมอีกครั้งเพื่อยืนยันการตั้งรหัสผ่าน');
-   if(second===null)return false;
-   if(first!==second){showToast('รหัสผ่านทั้งสองครั้งไม่ตรงกัน',true);return false;}
-   const allSnap=await db.ref('employeeCredentials').once('value'),all=allSnap.val()||{};
-   for(const existing of Object.values(all)){
-    if(existing&&existing.salt&&existing.hash){
-     const duplicate=await deriveEmployeePassword(first,base64ToBytes(existing.salt));
-     if(duplicate===existing.hash){showToast('รหัสผ่านนี้ถูกใช้โดยพนักงานคนอื่นแล้ว กรุณาตั้งรหัสผ่านใหม่',true);return false;}
-    }
-   }
-   const salt=crypto.getRandomValues(new Uint8Array(16)),hash=await deriveEmployeePassword(first,salt);
-   credential={salt:bytesToBase64(salt),hash,createdAt:new Date().toISOString()};
-   await ref.set(credential);
-   showToast('ตั้งรหัสผ่านส่วนตัวเรียบร้อย กรุณายืนยันรหัสผ่านเพื่อทำรายการ');
-  }
-  let wrongAttempts=0;
-  for(;;){
-   const entered=prompt(wrongAttempts===0?'ยืนยันรหัสผ่านของ '+name+' เพื่อทำรายการ\n(กด Cancel เพื่อยกเลิกการทำรายการ)':'รหัสผ่านไม่ถูกต้อง กรุณากรอกใหม่\n(กด Cancel เพื่อยกเลิกการทำรายการ)');
-   if(entered===null)return false;
-   const candidate=await deriveEmployeePassword(entered,base64ToBytes(credential.salt));
-   if(candidate===credential.hash)return true;
-   wrongAttempts++;
-   showToast('รหัสผ่านไม่ถูกต้อง กรุณากรอกใหม่',true);
-  }
- }catch(err){console.error(err);showToast('ยืนยันรหัสผ่านไม่สำเร็จ: '+(err.message||err.code),true);return false;}
-}
-
 let connCloud=null;
 function renderConnStatus(){
  const el=$('connStatus');if(!el)return;
@@ -631,7 +598,7 @@ function initEmployeeOptions(){
     if(select){const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.appendChild(opt);}
     if(managerSelect){const managerOpt=document.createElement('option');managerOpt.value=name;managerOpt.textContent=name;managerSelect.appendChild(managerOpt);}
   });
-  if(select){select.onchange=null;select.addEventListener('change',()=>{currentUser=select.value||null;renderEmployeeRequests();});}
+  if(select){select.onchange=()=>{currentUser=select.value||null;renderEmployeeRequests();};}
   // Login dropdown: every employee
   if(loginSelect){
     loginSelect.innerHTML='<option value="">-- กรุณาเลือกชื่อพนักงาน --</option>';
@@ -854,7 +821,7 @@ function leaveTypeColorMap(types){
 // จัดกลุ่มสถานะแบบ "หนึ่งคำขอ = หนึ่งสถานะ" เพื่อให้ตัวเลขทุกการ์ด/ทุกกราฟสอดคล้องกัน
 function statsBucket(req){const status=normalizeStatus(req.status);const cancelStatus=String(req.cancelStatus??'').trim();if(status===STATUS.CANCELLED||cancelStatus===STATUS.CANCELLED)return 'ยกเลิกแล้ว';if(cancelStatus===STATUS.CANCEL_PENDING)return 'รอยกเลิก';if(cancelStatus===STATUS.CANCEL_REJECTED)return 'ไม่อนุมัติยกเลิก';if(status===STATUS.APPROVED)return 'อนุมัติ';if(status===STATUS.REJECTED)return 'ไม่อนุมัติ';return 'รออนุมัติ';}
 function statsWorkdayCount(startDate,endDate){const s=parseLocalDate(startDate),e=parseLocalDate(endDate);if(!s||!e||e<s)return 0;let n=0;for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){const day=d.getDay();if(day!==0&&day!==6)n++;}return n;}
-function statsDaysOf(r){const s=parseLocalDate(r.startDate),e=parseLocalDate(r.endDate);if(statsState.workdayOnly&&s&&e&&e>=s)return statsWorkdayCount(r.startDate,r.endDate);return Number(r.leaveDays)||0;}
+function statsDaysOf(r,from,to){const s=parseLocalDate(r.startDate),e=parseLocalDate(r.endDate);if(!s||!e||e<s)return Number(r.leaveDays)||0;let n=0;for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){const k=dateKey(d);if(from&&k<from)continue;if(to&&k>to)continue;if(statsState.workdayOnly){const w=d.getDay();if(w===0||w===6)continue;}n++;}return n;}
 function statsMonthStart(month){const m=/^(\d{4})-(\d{2})$/.exec(String(month||''));if(!m)return '';const y=+m[1],mo=+m[2];if(mo<1||mo>12)return '';return `${y}-${String(mo).padStart(2,'0')}-01`;}
 function statsMonthEnd(month){const m=/^(\d{4})-(\d{2})$/.exec(String(month||''));if(!m)return '';const y=+m[1],mo=+m[2];if(mo<1||mo>12)return '';const last=new Date(y,mo,0).getDate();return `${y}-${String(mo).padStart(2,'0')}-${String(last).padStart(2,'0')}`;}
 function formatDateShort(key){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key||''));if(!m)return String(key||'');return `${m[3]}/${m[2]}/${+m[1]+543}`;}
@@ -875,7 +842,7 @@ function statsFilteredRows(){
       if(to&&sk>to)return false;
     }
     return true;
-  }).map(r=>({...r,bucket:statsBucket(r),statsDays:statsDaysOf(r)}));
+  }).map(r=>({...r,bucket:statsBucket(r),statsDays:statsDaysOf(r,from,to)}));
 }
 function syncStatsControls(){
   if($('statsMonthFrom'))statsState.monthFrom=$('statsMonthFrom').value||'';
@@ -1144,21 +1111,21 @@ function downloadStatsCSV(){
   const counts={};STATS_BUCKETS.forEach(b=>{counts[b.key]=0;});
   rows.forEach(r=>{counts[r.bucket]=(counts[r.bucket]||0)+1;});
   const scopedDays=scoped.reduce((s,r)=>s+r.statsDays,0);
-  const header=['หมวด','รายการ','จำนวนใบ','จำนวนวัน','อนุมัติ(ใบ)','รออนุมัติ(ใบ)','ไม่อนุมัติ(ใบ)','ยกเลิก(ใบ)','สัดส่วนวันลา(%)'];
+  const header=['หมวด','รายการ','จำนวนใบ','จำนวนวัน','อนุมัติ(ใบ)','รออนุมัติ(ใบ)','ไม่อนุมัติ(ใบ)','ยกเลิก(ใบ)','รออนุมัติยกเลิก(ใบ)','ไม่อนุมัติยกเลิก(ใบ)','สัดส่วนวันลา(%)'];
   const lines=[header];
-  lines.push(['สรุปรวม','รายการทั้งหมด',rows.length,scopedDays,counts['อนุมัติ'],counts['รออนุมัติ'],counts['ไม่อนุมัติ'],counts['ยกเลิกแล้ว'],scopedDays?100:0]);
-  STATS_BUCKETS.forEach(b=>lines.push(['สถานะ',b.label,counts[b.key]||0,'','','','','','']));
+  lines.push(['สรุปรวม','รายการทั้งหมด',rows.length,scopedDays,counts['อนุมัติ'],counts['รออนุมัติ'],counts['ไม่อนุมัติ'],counts['ยกเลิกแล้ว'],counts['รอยกเลิก'],counts['ไม่อนุมัติยกเลิก'],scopedDays?100:0]);
+  STATS_BUCKETS.forEach(b=>lines.push(['สถานะ',b.label,counts[b.key]||0,'','','','','','','','']));
   const empMap=new Map();
   scoped.forEach(r=>{const n=r.empName||'ไม่ระบุชื่อ';empMap.set(n,(empMap.get(n)||0)+r.statsDays);});
   [...new Set(rows.map(r=>r.empName||'ไม่ระบุชื่อ'))].forEach(name=>{
     const list=rows.filter(r=>(r.empName||'ไม่ระบุชื่อ')===name);
     const days=empMap.get(name)||0;
-    lines.push(['รายพนักงาน',name,list.length,days,list.filter(r=>r.bucket==='อนุมัติ').length,list.filter(r=>r.bucket==='รออนุมัติ').length,list.filter(r=>r.bucket==='ไม่อนุมัติ').length,list.filter(r=>r.bucket==='ยกเลิกแล้ว').length,scopedDays?Math.round(days/scopedDays*1000)/10:0]);
+    lines.push(['รายพนักงาน',name,list.length,days,list.filter(r=>r.bucket==='อนุมัติ').length,list.filter(r=>r.bucket==='รออนุมัติ').length,list.filter(r=>r.bucket==='ไม่อนุมัติ').length,list.filter(r=>r.bucket==='ยกเลิกแล้ว').length,list.filter(r=>r.bucket==='รอยกเลิก').length,list.filter(r=>r.bucket==='ไม่อนุมัติยกเลิก').length,scopedDays?Math.round(days/scopedDays*1000)/10:0]);
   });
   [...new Set(rows.map(r=>r.leaveType||'ไม่ระบุประเภท'))].forEach(t=>{
     const list=rows.filter(r=>(r.leaveType||'ไม่ระบุประเภท')===t);
     const days=scoped.filter(r=>(r.leaveType||'ไม่ระบุประเภท')===t).reduce((s,r)=>s+r.statsDays,0);
-    lines.push(['รายประเภท',t,list.length,days,list.filter(r=>r.bucket==='อนุมัติ').length,'','','',scopedDays?Math.round(days/scopedDays*1000)/10:0]);
+    lines.push(['รายประเภท',t,list.length,days,list.filter(r=>r.bucket==='อนุมัติ').length,'','','','','',scopedDays?Math.round(days/scopedDays*1000)/10:0]);
   });
   const csv='\uFEFF'+lines.map(row=>row.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -1167,9 +1134,9 @@ function downloadStatsCSV(){
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('สร้างไฟล์สถิติ CSV แล้ว');
 }
-function clearEmployeeForm(){const name=$('empName').value;$('leaveForm').reset();$('empName').value=name;$('leaveDays').value='';showToast('ล้างข้อมูลที่ยังไม่ได้ส่งแล้ว');}function renderManagerRequests(){const pending=$('allRequests'),processed=$('processedRequests'),cancelContainer=$('cancelRequests');const undoPending=leaveRequests.filter(r=>normalizeStatus(r.status)===STATUS.IN_PROGRESS&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_PENDING);const waiting=leaveRequests.filter(r=>normalizeStatus(r.status)===STATUS.PENDING&&normalizeStatus(r.cancelStatus)!==STATUS.CANCELLED);const done=leaveRequests.filter(r=>!waiting.includes(r)&&!(normalizeStatus(r.cancelStatus)===STATUS.CANCEL_PENDING)&&(!undoPending.includes(r)||isCancelled(r)));pending.innerHTML=waiting.length?waiting.map(r=>{const conflicts=checkLeaveAvailability(r.startDate,r.endDate,r.id);return `<div class="border rounded-lg p-4 border-blue-200 bg-blue-50"><div class="mb-3"><p class="font-bold text-lg">👤 ${escapeHTML(r.empName)}</p><p class="text-sm"><strong>ประเภท:</strong> ${escapeHTML(r.leaveType)} | <strong>จำนวน:</strong> ${escapeHTML(r.leaveDays)} วัน</p><p class="text-sm"><strong>ช่วงวันที่:</strong> ${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)}</p><p class="text-sm break-words"><strong>เหตุผล:</strong> ${escapeHTML(r.reason)}</p><p class="text-xs text-gray-500">ส่งเมื่อ: ${escapeHTML(r.submittedAt)}</p>${conflicts.length?'<p class="text-xs text-orange-700 mt-1">⚠️ หากอนุมัติจะเกินโควตาในบางวัน</p>':''}</div><div class="flex gap-2"><button data-action="approve" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm"><i class="fa fa-check mr-1"></i> อนุมัติ</button><button data-action="reject" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"><i class="fa fa-times mr-1"></i> ไม่อนุมัติ</button></div></div>`;}).join(''):'<p class="text-gray-500 text-center py-4">ยังไม่มีคำขอลารอการอนุมัติ</p>';
+function clearEmployeeForm(){const name=$('empName').value;$('leaveForm').reset();$('empName').value=name;$('leaveDays').value='';showToast('ล้างข้อมูลที่ยังไม่ได้ส่งแล้ว');}function renderManagerRequests(){const pending=$('allRequests'),processed=$('processedRequests'),cancelContainer=$('cancelRequests');const undoPending=leaveRequests.filter(r=>normalizeStatus(r.status)===STATUS.IN_PROGRESS&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_PENDING);const waiting=leaveRequests.filter(r=>normalizeStatus(r.status)===STATUS.PENDING&&normalizeStatus(r.cancelStatus)!==STATUS.CANCELLED&&normalizeStatus(r.cancelStatus)!==STATUS.CANCEL_PENDING);const done=leaveRequests.filter(r=>!waiting.includes(r)&&!(normalizeStatus(r.cancelStatus)===STATUS.CANCEL_PENDING)&&(!undoPending.includes(r)||isCancelled(r)));pending.innerHTML=waiting.length?waiting.map(r=>{const conflicts=checkLeaveAvailability(r.startDate,r.endDate,r.id);return `<div class="border rounded-lg p-4 border-blue-200 bg-blue-50"><div class="mb-3"><p class="font-bold text-lg">👤 ${escapeHTML(r.empName)}</p><p class="text-sm"><strong>ประเภท:</strong> ${escapeHTML(r.leaveType)} | <strong>จำนวน:</strong> ${escapeHTML(r.leaveDays)} วัน</p><p class="text-sm"><strong>ช่วงวันที่:</strong> ${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)}</p><p class="text-sm break-words"><strong>เหตุผล:</strong> ${escapeHTML(r.reason)}</p><p class="text-xs text-gray-500">ส่งเมื่อ: ${escapeHTML(r.submittedAt)}</p>${conflicts.length?'<p class="text-xs text-orange-700 mt-1">⚠️ หากอนุมัติจะเกินโควตาในบางวัน</p>':''}</div><div class="flex gap-2"><button data-action="approve" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm"><i class="fa fa-check mr-1"></i> อนุมัติ</button><button data-action="reject" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"><i class="fa fa-times mr-1"></i> ไม่อนุมัติ</button></div></div>`;}).join(''):'<p class="text-gray-500 text-center py-4">ยังไม่มีคำขอลารอการอนุมัติ</p>';
 const cancelWaiting=leaveRequests.filter(r=>normalizeStatus(r.cancelStatus)===STATUS.CANCEL_PENDING);cancelContainer.innerHTML=cancelWaiting.length?cancelWaiting.map(r=>`<div class="border rounded-lg p-4 border-orange-200 bg-orange-50"><p class="font-bold text-lg">👤 ${escapeHTML(r.empName)}</p><p class="text-sm mt-1"><strong>ประเภท:</strong> ${escapeHTML(r.leaveType)} · ${escapeHTML(r.leaveDays)} วัน</p><p class="text-sm"><strong>ช่วงวันที่ลา:</strong> ${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)}</p><p class="text-sm"><strong>สถานะคำขอลาเดิม:</strong> ${escapeHTML(r.statusBeforeCancelRequest||'รออนุมัติ')}</p><p class="text-sm break-words"><strong>เหตุผลขอยกเลิก:</strong> ${escapeHTML(r.cancelReason||'ไม่ได้ระบุ')}</p><p class="text-xs text-gray-500">ส่งคำขอยกเลิกเมื่อ: ${escapeHTML(r.cancelRequestedAt||'')}</p><div class="flex flex-wrap gap-2 mt-3"><button data-action="approve-cancel" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"><i class="fa fa-check mr-1"></i> อนุมัติยกเลิก</button><button data-action="reject-cancel" data-id="${escapeHTML(r.id)}" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"><i class="fa fa-times mr-1"></i> ไม่อนุมัติยกเลิก</button></div></div>`).join(''):'<p class="text-gray-500 text-center py-3">ไม่มีคำขอยกเลิกวันลารออนุมัติ</p>';
-processed.innerHTML=(done.length?done.map(r=>{const canDelete=isCancelled(r)||normalizeStatus(r.status)===STATUS.REJECTED||normalizeStatus(r.cancelStatus)===STATUS.CANCEL_REJECTED;return `<div class="p-2 rounded ${canDelete?'selectable-item':''} ${normalizeStatus(r.status)===STATUS.APPROVED&&!r.cancelStatus?'bg-green-50 border border-green-200':'bg-red-50 border border-red-200'}" ${canDelete?`data-select-key="req:${escapeHTML(r.id)}"`:''}><div class="flex flex-wrap justify-between items-center mb-1 gap-2"><span class="font-semibold text-xs">${escapeHTML(r.empName)} — ${escapeHTML(r.leaveType)}</span><span class="text-xs font-semibold ${r.cancelStatus==='ยกเลิกแล้ว'?'text-green-700':r.cancelStatus==='ไม่อนุมัติยกเลิก'?'text-red-700':statusClass(r.status)} whitespace-nowrap">${escapeHTML(r.cancelStatus?'ยกเลิก: '+r.cancelStatus:r.status)}</span></div><div class="space-y-1 pl-2">${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)} (${escapeHTML(r.leaveDays)} วัน)</div>${r.managerEntered?'<div class="text-xs text-indigo-700">ลงรายการโดยหัวหน้างาน</div>'+(r.quotaOverride?'<div class="text-xs text-orange-700">ยกเว้นโควตา: '+escapeHTML(r.quotaOverrideReason||'ไม่ระบุเหตุผล')+'</div>':''):''}${r.cancelStatus?`<div class="text-xs ${r.cancelStatus==='ยกเลิกแล้ว'?'text-green-700':r.cancelStatus==='ไม่อนุมัติยกเลิก'?'text-red-700':'text-orange-700'}">สถานะยกเลิก: ${escapeHTML(r.cancelStatus)}${r.cancelReason?' · เหตุผล: '+escapeHTML(r.cancelReason):''}</div>`:''}</div>${canDelete?`<div class="item-delete mt-2 pt-2 border-t"><button type="button" data-action="delete-history" data-id="${escapeHTML(r.id)}" class="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs"><i class="fa fa-trash mr-1"></i> ลบประวัติ</button></div>`:''}</div>`;}).join(''):'<p class="text-sm text-gray-500 text-center py-2">ยังไม่มีรายการที่ดำเนินการแล้ว</p>');const pcCard=$('processedCardCount');if(pcCard)pcCard.textContent=done.length?`${done.length} ใบ`:'0 ใบ';}
+processed.innerHTML=(done.length?done.map(r=>{const canDelete=isCancelled(r)||normalizeStatus(r.status)===STATUS.REJECTED;return `<div class="p-2 rounded ${canDelete?'selectable-item':''} ${normalizeStatus(r.status)===STATUS.APPROVED&&!r.cancelStatus?'bg-green-50 border border-green-200':'bg-red-50 border border-red-200'}" ${canDelete?`data-select-key="req:${escapeHTML(r.id)}"`:''}><div class="flex flex-wrap justify-between items-center mb-1 gap-2"><span class="font-semibold text-xs">${escapeHTML(r.empName)} — ${escapeHTML(r.leaveType)}</span><span class="text-xs font-semibold ${r.cancelStatus==='ยกเลิกแล้ว'?'text-green-700':r.cancelStatus==='ไม่อนุมัติยกเลิก'?'text-red-700':statusClass(r.status)} whitespace-nowrap">${escapeHTML(r.cancelStatus?'ยกเลิก: '+r.cancelStatus:r.status)}</span></div><div class="space-y-1 pl-2">${escapeHTML(r.startDate)} ถึง ${escapeHTML(r.endDate)} (${escapeHTML(r.leaveDays)} วัน)</div>${r.managerEntered?'<div class="text-xs text-indigo-700">ลงรายการโดยหัวหน้างาน</div>'+(r.quotaOverride?'<div class="text-xs text-orange-700">ยกเว้นโควตา: '+escapeHTML(r.quotaOverrideReason||'ไม่ระบุเหตุผล')+'</div>':''):''}${r.cancelStatus?`<div class="text-xs ${r.cancelStatus==='ยกเลิกแล้ว'?'text-green-700':r.cancelStatus==='ไม่อนุมัติยกเลิก'?'text-red-700':'text-orange-700'}">สถานะยกเลิก: ${escapeHTML(r.cancelStatus)}${r.cancelReason?' · เหตุผล: '+escapeHTML(r.cancelReason):''}</div>`:''}</div>${canDelete?`<div class="item-delete mt-2 pt-2 border-t"><button type="button" data-action="delete-history" data-id="${escapeHTML(r.id)}" class="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs"><i class="fa fa-trash mr-1"></i> ลบประวัติ</button></div>`:''}</div>`;}).join(''):'<p class="text-sm text-gray-500 text-center py-2">ยังไม่มีรายการที่ดำเนินการแล้ว</p>');const pcCard=$('processedCardCount');if(pcCard)pcCard.textContent=done.length?`${done.length} ใบ`:'0 ใบ';}
 async function handleEmployeeCancel(btn){if(managerMode){showToast('กรุณาใช้โหมดพนักงานเพื่อขอยกเลิก',true);return;}const req=leaveRequests.find(r=>r.id===btn.dataset.id);if(!req||req.empName!==currentUser){showToast('กรุณาเลือกชื่อพนักงานเจ้าของรายการ',true);return;}if(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_PENDING){showToast('รายการนี้ไม่สามารถส่งคำขอยกเลิกซ้ำได้',true);return;}if(String(req.endDate||'')<dateKey(new Date())){showToast('ไม่สามารถขอยกเลิกได้ เนื่องจากวันที่ลาเลยวันปัจจุบันมาแล้ว',true);return;}const reason=prompt('ระบุเหตุผลที่ต้องการยกเลิกวันลา (กด Cancel เพื่อยกเลิกการทำรายการ):');if(reason===null)return;if(!reason.trim()){showToast('กรุณาระบุเหตุผลการยกเลิก',true);return;}if(!confirm(`ยืนยันส่งคำขอยกเลิกวันลา ${req.startDate} ถึง ${req.endDate} ให้หัวหน้างานพิจารณาหรือไม่?`))return;btn.disabled=true;try{const now=new Date();const updates={cancelStatus:STATUS.CANCEL_PENDING,cancelReason:reason.trim(),cancelRequestedAt:now.toLocaleString('th-TH'),cancelRequestedAtISO:now.toISOString()};if(normalizeStatus(req.status)===STATUS.APPROVED){updates.statusBeforeCancelRequest=STATUS.APPROVED;updates.status=STATUS.IN_PROGRESS;}await db.ref('leaveRequests/'+req.id).update(updates);logActivity(req.empName,'cancel-request',`${req.leaveType} · ${req.startDate} ถึง ${req.endDate} · เหตุผลขอยกเลิก: ${reason.trim()}`,'พนักงาน',req.id);notifyLeave('cancel-requested',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,cancelReason:reason.trim()});backupToGoogleSheet('upsert',Object.assign({},req,updates,{id:req.id}));showToast(normalizeStatus(req.status)===STATUS.APPROVED?'ส่งคำขอยกเลิกแล้ว สถานะเปลี่ยนเป็น “รอการดำเนินการ” จนกว่าหัวหน้างานจะพิจารณา':'ส่งคำขอยกเลิกแล้ว โดยคำขอเดิมยังรอหัวหน้างานพิจารณา');}catch(err){console.error(err);showToast('ส่งคำขอยกเลิกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
 function renderAllVisiblePages(){if(!$('employeePage').classList.contains('hidden')){renderMonthCalendar('employeeMonthCalendar','employee');renderLeaveCalendar('leaveCalendar');renderEmployeeRequests();}if(!$('managerPage').classList.contains('hidden')){renderManagerDashboard();renderMonthCalendar('managerMonthCalendar','manager');renderLeaveCalendar('allLeaveCalendar');renderManagerRequests();renderActivityLog();}if($('statsPage')&&!$('statsPage').classList.contains('hidden')){renderStatsCharts();}}
 
@@ -1182,7 +1149,7 @@ async function handleManagerLeaveSubmit(e){
  if(!managerMode){showToast('ไม่มีสิทธิ์ใช้งานฟังก์ชันนี้',true);return;}
  const empName=$('managerEmpName').value,leaveType=$('managerLeaveType').value,startDate=$('managerStartDate').value,endDate=$('managerEndDate').value,reason=$('managerLeaveReason').value.trim(),overrideReason=$('managerOverrideReason').value.trim();
  if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลลงลางานให้ครบถ้วน',true);return;}
- if(!EMPLOYEE_LIST.includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}
+ if(!getEmployeeList().includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}
  if(!calculateManagerLeaveDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}
  const conflicts=checkLeaveAvailability(startDate,endDate);
  if(conflicts.length&&!overrideReason){showToast('วันที่ลาเต็มโควตาแล้ว กรุณาระบุเหตุผลอนุญาตเกินโควตา',true);$('managerOverrideReason').focus();return;}
@@ -1192,7 +1159,7 @@ async function handleManagerLeaveSubmit(e){
  const btn=$('btnSubmitManagerLeave');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
  try{
   const now=new Date(),nowISO=now.toISOString();
-  const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('managerLeaveDays').value),reason,status:STATUS.APPROVED,submittedAt:now.toLocaleString('th-TH'),submittedAtISO:nowISO,processedAt:now.toLocaleString('th-TH'),processedAtISO:nowISO,managerEntered:true,createdBy:'หัวหน้างาน',quotaOverride:conflicts.length>0,quotaOverrideDates:conflicts,quotaOverrideReason:conflicts.length?overrideReason:'',managerActionAt:now.toLocaleString('th-TH')};
+  const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('managerLeaveDays').value),reason,status:STATUS.APPROVED,submittedAt:now.toLocaleString('th-TH'),submittedAtISO:nowISO,processedAt:now.toLocaleString('th-TH'),processedAtISO:nowISO,managerEntered:true,createdBy:'หัวหน้างาน',quotaOverride:(conflicts.length>0||ownOverlap.length>0),quotaOverrideDates:conflicts,quotaOverrideReason:(conflicts.length||ownOverlap.length)?overrideReason:'',managerActionAt:now.toLocaleString('th-TH')};
   const reqRef=db.ref('leaveRequests').push(newRequest);
   logActivity(empName,'manager-enter',`${leaveType} · ${startDate} ถึง ${endDate} (${$('managerLeaveDays').value} วัน) · เหตุผล: ${reason}`+(conflicts.length?` · อนุญาตเกินโควตา: ${overrideReason||'ไม่ระบุเหตุผล'}`:''),'หัวหน้างาน',reqRef.key);
    notifyLeave('approved',{empName,leaveType,startDate,endDate,leaveDays:Number($('managerLeaveDays').value),reason,processedAt:now.toLocaleString('th-TH'),managerEntered:true});
@@ -1203,9 +1170,9 @@ async function handleManagerLeaveSubmit(e){
  finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-calendar-plus mr-2"></i> บันทึกและอนุมัติวันลา';}
 }
 
-function downloadAllRecords(){if(!leaveRequests.length){showToast('ไม่มีข้อมูลสำหรับดาวน์โหลด',true);return;}const headers=['ชื่อ','ประเภท','วันที่เริ่ม','วันที่สิ้นสุด','จำนวนวัน','เหตุผล','สถานะ','วันที่ส่ง'];const rows=leaveRequests.map(r=>[r.empName,r.leaveType,r.startDate,r.endDate,r.leaveDays,r.reason,r.status,r.submittedAt]);const csv='\uFEFF'+[headers,...rows].map(row=>row.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`รายงานการลา_${dateKey(new Date())}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('สร้างรายงาน CSV แล้ว');}
-async function handleSubmit(e){e.preventDefault();if(!$('submitBtn').disabled){}const empName=$('empName').value,leaveType=$('leaveType').value,startDate=$('startDate').value,endDate=$('endDate').value,reason=$('reason').value.trim();if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลให้ครบถ้วน',true);return;}if(!calculateDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}if(!EMPLOYEE_LIST.includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}if(findDuplicateRequest(empName,startDate,endDate).length){showToast('คุณมีคำขอในช่วงวันนี้อยู่แล้ว กรุณาตรวจสอบรายการของคุณ',true);return;}const own=findOwnOverlaps(empName,startDate,endDate);if(own.length){showToast(`ช่วงวันที่ลาทับซ้อนกับคำขอเดิมของคุณ (${own[0].startDate} ถึง ${own[0].endDate})`,true);return;}const conflicts=checkLeaveAvailability(startDate,endDate);if(conflicts.length){showToast(`วันที่ ${conflicts[0]} มีผู้ลาเต็มโควตาแล้ว (2 คน/วัน)`,true);return;}const btn=$('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';try{const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('leaveDays').value),reason,status:STATUS.PENDING,submittedAt:new Date().toLocaleString('th-TH'),submittedAtISO:new Date().toISOString()};const reqRef=db.ref('leaveRequests').push(newRequest);logActivity(empName,'submit',`${leaveType} · ${startDate} ถึง ${endDate} (${$('leaveDays').value} วัน) · เหตุผล: ${reason}`,'พนักงาน',reqRef.key);notifyLeave('new-request',newRequest);backupToGoogleSheet('upsert',Object.assign({id:reqRef.key},newRequest));currentUser=empName;showToast('ส่งคำขอลาสำเร็จ');$('leaveType').value='';$('startDate').value='';$('endDate').value='';$('leaveDays').value='';$('reason').value='';$('empName').value=empName;renderEmployeeRequests();}catch(err){console.error(err);showToast('บันทึกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';}}
-async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action;if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(action==='edit-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}btn.disabled=true;try{const snap=await db.ref('users/'+key).once('value');const data=snap.val()||{};await editEmployeeUser(key,data);}catch(e){console.error(e);showToast('แก้ไขไม่สำเร็จ: '+(e.message||e.code),true);}finally{btn.disabled=false;}return;}if(action==='delete-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;const name=btn.dataset.name||'';if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}await deleteEmployeeUser(key,name);return;}const req=leaveRequests.find(r=>r.id===id);if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH')};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH')};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={status:STATUS.CANCEL_APPROVED,cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS&&req.statusBeforeCancelRequest){updates.status=req.statusBeforeCancelRequest;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req)||normalizeStatus(req.cancelStatus)===STATUS.CANCEL_REJECTED)){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();backupToGoogleSheet('delete',{id:id});logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);backupToGoogleSheet('upsert',Object.assign({},req,updates,{id:id}));const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
+function downloadAllRecords(){if(!leaveRequests.length){showToast('ไม่มีข้อมูลสำหรับดาวน์โหลด',true);return;}const headers=['ชื่อ','ประเภท','วันที่เริ่ม','วันที่สิ้นสุด','จำนวนวัน','เหตุผล','สถานะ','วันที่ส่ง','สถานะยกเลิก','เหตุผลขอยกเลิก','วันที่ดำเนินการ','ลงโดยหัวหน้างาน','เกินโควตา','เหตุผลเกินโควตา'];const rows=leaveRequests.map(r=>[r.empName,r.leaveType,r.startDate,r.endDate,r.leaveDays,r.reason,r.status,r.submittedAt,r.cancelStatus||'',r.cancelReason||'',r.processedAt||r.cancelProcessedAt||'',r.managerEntered?'หัวหน้างาน':'',r.quotaOverride?'ใช่':'',r.quotaOverrideReason||'']);const csv='\uFEFF'+[headers,...rows].map(row=>row.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`รายงานการลา_${dateKey(new Date())}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('สร้างรายงาน CSV แล้ว');}
+async function handleSubmit(e){e.preventDefault();const empName=$('empName').value,leaveType=$('leaveType').value,startDate=$('startDate').value,endDate=$('endDate').value,reason=$('reason').value.trim();if(!empName||!leaveType||!startDate||!endDate||!reason){showToast('กรอกข้อมูลให้ครบถ้วน',true);return;}if(!calculateDays()){showToast('กรุณาตรวจสอบวันที่เริ่มและสิ้นสุด',true);return;}if(!getEmployeeList().includes(empName)){showToast('ชื่อพนักงานไม่ถูกต้อง',true);return;}if(findDuplicateRequest(empName,startDate,endDate).length){showToast('คุณมีคำขอในช่วงวันนี้อยู่แล้ว กรุณาตรวจสอบรายการของคุณ',true);return;}const own=findOwnOverlaps(empName,startDate,endDate);if(own.length){showToast(`ช่วงวันที่ลาทับซ้อนกับคำขอเดิมของคุณ (${own[0].startDate} ถึง ${own[0].endDate})`,true);return;}const conflicts=checkLeaveAvailability(startDate,endDate);if(conflicts.length){showToast(`วันที่ ${conflicts[0]} มีผู้ลาเต็มโควตาแล้ว (2 คน/วัน)`,true);return;}const btn=$('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fa fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';try{const newRequest={empName,leaveType,startDate,endDate,leaveDays:Number($('leaveDays').value),reason,status:STATUS.PENDING,submittedAt:new Date().toLocaleString('th-TH'),submittedAtISO:new Date().toISOString()};const reqRef=db.ref('leaveRequests').push(newRequest);logActivity(empName,'submit',`${leaveType} · ${startDate} ถึง ${endDate} (${$('leaveDays').value} วัน) · เหตุผล: ${reason}`,'พนักงาน',reqRef.key);notifyLeave('new-request',newRequest);backupToGoogleSheet('upsert',Object.assign({id:reqRef.key},newRequest));currentUser=empName;showToast('ส่งคำขอลาสำเร็จ');$('leaveType').value='';$('startDate').value='';$('endDate').value='';$('leaveDays').value='';$('reason').value='';$('empName').value=empName;renderEmployeeRequests();}catch(err){console.error(err);showToast('บันทึกไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa fa-paper-plane mr-2"></i> ส่งคำขอลา';}}
+async function handleManagerAction(btn){const id=btn.dataset.id,action=btn.dataset.action;if(action==='request-cancel'){await handleEmployeeCancel(btn);return;}if(action==='delete-log'){if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ลบรายการ',true);return;}const logEntry=activityLogs.find(l=>l.id===id);if(!logEntry){showToast('ไม่พบรายการที่ต้องการลบ',true);return;}if(!confirm(`ยืนยันลบรายการประวัติของ ${logEntry.empName||'ไม่ระบุชื่อ'} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('activityLog/'+id).remove();showToast('ลบรายการประวัติเรียบร้อย');}catch(err){console.error(err);showToast('ลบรายการไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}if(action==='edit-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}btn.disabled=true;try{const snap=await db.ref('users/'+key).once('value');const data=snap.val()||{};await editEmployeeUser(key,data);}catch(e){console.error(e);showToast('แก้ไขไม่สำเร็จ: '+(e.message||e.code),true);}finally{btn.disabled=false;}return;}if(action==='delete-user'){if(!(managerMode || adminMode)){showToast('ไม่มีสิทธิ์',true);return;}const key=btn.dataset.key;const name=btn.dataset.name||'';if(!key){showToast('ไม่พบข้อมูลผู้ใช้',true);return;}await deleteEmployeeUser(key,name);return;}const req=leaveRequests.find(r=>r.id===id);if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ใช้งานโหมดหัวหน้างาน',true);return;}if(!req)return;let updates={},message='';if(action==='approve'){const conflicts=checkLeaveAvailability(req.startDate,req.endDate,req.id);if(conflicts.length){showToast(`ไม่สามารถอนุมัติได้: ${conflicts[0]} เต็มโควตาแล้ว`,true);return;}updates={status:STATUS.APPROVED,processedAt:new Date().toLocaleString('th-TH'),processedAtISO:new Date().toISOString()};message='อนุมัติคำขอลาสำเร็จ';}else if(action==='reject'){updates={status:STATUS.REJECTED,processedAt:new Date().toLocaleString('th-TH'),processedAtISO:new Date().toISOString()};message='บันทึกสถานะไม่อนุมัติแล้ว';}else if(action==='approve-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={status:STATUS.CANCEL_APPROVED,cancelStatus:STATUS.CANCELLED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};message='อนุมัติยกเลิกวันลาแล้ว และคืนโควตาวันลาให้ระบบ';}else if(action==='reject-cancel'){if(normalizeStatus(req.cancelStatus)!==STATUS.CANCEL_PENDING){showToast('คำขอยกเลิกนี้ถูกดำเนินการแล้ว',true);return;}updates={cancelStatus:STATUS.CANCEL_REJECTED,cancelProcessedAt:new Date().toLocaleString('th-TH'),cancelProcessedAtISO:new Date().toISOString()};if(normalizeStatus(req.status)===STATUS.IN_PROGRESS){updates.status=STATUS.APPROVED;}message='ไม่อนุมัติการยกเลิกวันลา';}else if(action==='delete-history'){if(!managerMode && !adminMode){showToast('ไม่มีสิทธิ์ลบประวัติ',true);return;}if(!(normalizeStatus(req.status)===STATUS.REJECTED||isCancelled(req))){showToast('รายการนี้ไม่สามารถลบจากประวัติได้',true);return;}if(!confirm(`ยืนยันลบประวัติรายการของ ${req.empName} หรือไม่?\n\nข้อมูลจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้`))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).remove();backupToGoogleSheet('delete',{id:id});logActivity(req.empName,'delete-history',`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} · สถานะเดิม: ${req.status||'-'}${req.cancelStatus?' (ยกเลิก: '+req.cancelStatus+')':''}`,'หัวหน้างาน',id);showToast('ลบประวัติเรียบร้อยแล้ว');}catch(err){console.error(err);showToast('ลบประวัติไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}return;}else{return;}const question=action==='approve'?`ยืนยันอนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='reject'?`ยืนยันไม่อนุมัติคำขอลาของ ${req.empName} หรือไม่?`:action==='approve-cancel'?`ยืนยันอนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่? เมื่ออนุมัติแล้วระบบจะไม่นับวันลาดังกล่าวในโควตา`: `ยืนยันไม่อนุมัติการยกเลิกวันลาของ ${req.empName} หรือไม่?`;if(!confirm(question))return;btn.disabled=true;try{await db.ref('leaveRequests/'+id).update(updates);backupToGoogleSheet('upsert',Object.assign({},req,updates,{id:id}));const actDetail=`${req.leaveType||'ไม่ระบุประเภท'} · ${req.startDate||'-'} ถึง ${req.endDate||'-'} (${req.leaveDays??'-'} วัน)`;logActivity(req.empName,action,((action==='approve-cancel'||action==='reject-cancel')?`คำขอยกเลิก: ${req.cancelReason||'ไม่ระบุ'}`:`เหตุผล: ${req.reason||'ไม่ระบุ'}`)+` · ${actDetail}`,'หัวหน้างาน',id);
 if(action==='approve')notifyLeave('approved',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});else if(action==='reject')notifyLeave('rejected',{empName:req.empName,leaveType:req.leaveType,startDate:req.startDate,endDate:req.endDate,leaveDays:req.leaveDays,reason:req.reason,processedAt:updates.processedAt});showToast(message);}catch(err){console.error(err);showToast('อัปเดตไม่สำเร็จ: '+(err.message||err.code),true);}finally{btn.disabled=false;}}
 document.addEventListener('DOMContentLoaded',async()=>{
   checkConnection();

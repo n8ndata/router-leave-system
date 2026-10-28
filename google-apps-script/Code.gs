@@ -120,6 +120,12 @@ function doPost(e) {
     }
     
     const payload = JSON.parse(e.postData.contents);
+
+    // Optional shared-token protection: WEBHOOK_TOKEN "" = disabled
+    const WEBHOOK_TOKEN = "";
+    if (WEBHOOK_TOKEN && payload.token !== WEBHOOK_TOKEN) {
+      return jsonResponse({ status: "error", message: "Unauthorized" });
+    }
     const action = payload.action;
     const sheet = getOrCreateSheet();
 
@@ -259,7 +265,7 @@ function syncFromFirebase() {
     const records = Object.entries(data)
       .filter(([id, val]) => val && typeof val === "object")
       .map(([id, val]) => Object.assign({ id }, val))
-      .sort((a, b) => String(b.submittedAt || "").localeCompare(String(a.submittedAt || "")));
+      .sort((a, b) => ((Date.parse(b.submittedAtISO || "") || 0) - (Date.parse(a.submittedAtISO || "") || 0)));
 
     writeAllRecordsToSheet(sheet, records);
 
