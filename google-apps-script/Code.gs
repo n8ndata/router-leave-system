@@ -175,7 +175,44 @@ function doGet(e) {
 }
 
 /**
- * เขียนข้อมูลทั้งหมดทับตาราง (คงหัวตารางไว้)
+ * เรียงลำดับคำขอลาตาม "วันที่เริ่มลา" จากก่อนไปหลัง (น้อยไปมาก)
+ * เรียงรองด้วยเวลาเริ่มลา แล้วจึงเรียงรองด้วยชื่อ-นามสกุล
+ * (startDate เก็บในรูปแบบ YYYY-MM-DD จึงเทียบแบบข้อความได้ตรงตามลำดับเวลา)
+ */
+function sortRecordsByLeaveDate(records) {
+  return (records || []).slice().sort((a, b) => {
+    const sa = String(a.startDate || ""), sb = String(b.startDate || "");
+    if (sa !== sb) return sa < sb ? -1 : 1;
+    const ta = String(a.startTime || ""), tb = String(b.startTime || "");
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    const ea = String(a.empName || ""), eb = String(b.empName || "");
+    if (ea !== eb) return ea < eb ? -1 : 1;
+    return 0;
+  });
+}
+
+/**
+ * หาตำแหน่งแถวที่ควรแทรกรายการใหม่ เพื่อให้ตารางยังเรียงตามวันที่เริ่มลา
+ * คืนค่าหมายเลขแถว (1-based) ที่ต้องแทรก หรือ 0 หากควรต่อท้าย
+ */
+function findInsertRowByLeaveDate(sheet, rec) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return 0;
+  const newStart = String(rec.startDate || "");
+  const newTime = String(rec.startTime || "");
+  const rows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    const rowStart = String(rows[i][3] || ""); // คอลัมน์ 4 = วันที่เริ่มลา
+    const rowTime = String(rows[i][4] || "");  // คอลัมน์ 5 = เวลาเริ่มลา
+    if (rowStart > newStart || (rowStart === newStart && rowTime > newTime)) {
+      return i + 2;
+    }
+  }
+  return 0;
+}
+
+/**
+ * เขียนข้อมูลทั้งหมดทับตาราง (คงหัวตารางไว้) — เรียงตามวันที่เริ่มลาจากก่อนไปหลัง
  */
 function writeAllRecordsToSheet(sheet, records) {
   const lastRow = sheet.getLastRow();
@@ -186,7 +223,7 @@ function writeAllRecordsToSheet(sheet, records) {
 
   if (!records || records.length === 0) return;
 
-  const rows = records.map(r => rowFromRecord(r));
+  const rows = sortRecordsByLeaveDate(records).map(r => rowFromRecord(r));
   sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
 
   // จัดกึ่งกลางคอลัมน์สำคัญ
@@ -213,8 +250,14 @@ function upsertSingleRecord(sheet, rec) {
     }
   }
   
-  // หากไม่พบ ID เดิม ให้เพิ่มแถวใหม่
-  sheet.appendRow(rowData);
+  // หากไม่พบ ID เดิม ให้แทรกแถวใหม่ตามลำดับวันที่เริ่มลา (ก่อนไปหลัง)
+  const insertAt = findInsertRowByLeaveDate(sheet, rec);
+  if (insertAt > 0) {
+    sheet.insertRowsBefore(insertAt, 1);
+    sheet.getRange(insertAt, 1, 1, HEADERS.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
 }
 
 /**
