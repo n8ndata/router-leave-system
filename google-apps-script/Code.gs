@@ -20,7 +20,9 @@ const HEADERS = [
   "ชื่อ-นามสกุล",
   "ประเภทการลา",
   "วันที่เริ่มลา",
+  "เวลาเริ่มลา",
   "วันที่สิ้นสุด",
+  "เวลาสิ้นสุดลา",
   "จำนวนวัน",
   "เหตุผลการลา",
   "สถานะคำขอ",
@@ -91,7 +93,9 @@ function rowFromRecord(r) {
     r.empName || "",
     r.leaveType || "",
     r.startDate || "",
+    r.startTime || "",
     r.endDate || "",
+    r.endTime || "",
     r.leaveDays != null ? Number(r.leaveDays) : "",
     r.reason || "",
     r.status || "รออนุมัติ",
@@ -186,9 +190,9 @@ function writeAllRecordsToSheet(sheet, records) {
   sheet.getRange(2, 1, rows.length, HEADERS.length).setValues(rows);
 
   // จัดกึ่งกลางคอลัมน์สำคัญ
-  sheet.getRange(2, 4, rows.length, 3).setHorizontalAlignment("center"); // วันที่เริ่ม วันที่สิ้นสุด จำนวนวัน
-  sheet.getRange(2, 8, rows.length, 1).setHorizontalAlignment("center"); // สถานะ
-  sheet.getRange(2, 11, rows.length, 1).setHorizontalAlignment("center"); // สถานะยกเลิก
+  sheet.getRange(2, 4, rows.length, 5).setHorizontalAlignment("center"); // วันที่เริ่ม เวลาเริ่ม วันที่สิ้นสุด เวลาสิ้นสุด จำนวนวัน
+  sheet.getRange(2, 10, rows.length, 1).setHorizontalAlignment("center"); // สถานะ
+  sheet.getRange(2, 13, rows.length, 1).setHorizontalAlignment("center"); // สถานะยกเลิก
 }
 
 /**

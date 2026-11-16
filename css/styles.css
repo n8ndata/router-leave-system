@@ -298,7 +298,7 @@ button:not(:disabled){cursor:pointer}button:focus-visible{outline:3px solid #38b
 [data-theme="dark"] input:not([type=checkbox]):not([type=radio]),[data-theme="dark"] select,[data-theme="dark"] textarea{background-color:#172033!important;color:#f1f5f9!important;border-color:#475569!important}
 [data-theme="dark"] input::placeholder,[data-theme="dark"] textarea::placeholder{color:#94a3b8!important}
 [data-theme="dark"] option{background-color:#1e293b!important;color:#f1f5f9!important}
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator{filter:invert(.85)}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator,[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(.85)}
 
 /* เส้นขอบที่ยังเป็นสีอ่อน */
 [data-theme="dark"] .border-gray-100,[data-theme="dark"] .border-slate-200,[data-theme="dark"] .border-slate-300{border-color:#334155!important}
